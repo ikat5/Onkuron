@@ -1,0 +1,56 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Secrets use `sync: false`: Render asks for their values when the Blueprint is created.
+services:
+  - type: web
+    name: onkuron
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      # Skip downloading the test-only MongoDB binary during install
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: onkurlms
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_URL
+        sync: false
+      # Render sits behind a proxy that sets X-Forwarded-For
+      - key: TRUST_PROXY
+        value: "true"
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_REQUIRE_TLS
+        value: "true"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: TEACHER_EMAIL
+        sync: false
+      - key: TEACHER_PASSWORD
+        sync: false
+      - key: SEED_INITIAL_TEACHER
+        value: "true"
+      - key: CRON_SECRET
+        generateValue: true

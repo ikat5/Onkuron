@@ -1,0 +1,45 @@
+import { Schema } from "mongoose";
+import { model } from "./util";
+
+/**
+ * Singleton document holding platform configuration editable by the teacher.
+ * Payment numbers are *receiving* wallet numbers shown to students — never
+ * account credentials.
+ */
+export interface ISetting {
+  key: "platform";
+  paymentNumbers: { bkash?: string; nagad?: string; rocket?: string };
+  paymentInstructions: string;
+  supportEmail?: string;
+  supportPhone?: string;
+  /**
+   * Platform introduction shown on the homepage and the admin overview (single source of truth).
+   * Only a server-validated YouTube video ID is stored.
+   */
+  intro?: { youtubeVideoId?: string; title?: string; text?: string };
+  updatedAt: Date;
+}
+
+const SettingSchema = new Schema<ISetting>(
+  {
+    key: { type: String, enum: ["platform"], required: true },
+    paymentNumbers: {
+      bkash: { type: String, maxlength: 20 },
+      nagad: { type: String, maxlength: 20 },
+      rocket: { type: String, maxlength: 20 },
+    },
+    paymentInstructions: { type: String, default: "", maxlength: 2000 },
+    supportEmail: { type: String, maxlength: 254 },
+    supportPhone: { type: String, maxlength: 20 },
+    intro: {
+      youtubeVideoId: { type: String, match: /^[A-Za-z0-9_-]{11}$/ },
+      title: { type: String, maxlength: 120 },
+      text: { type: String, maxlength: 1500 },
+    },
+  },
+  { timestamps: { createdAt: false, updatedAt: true } },
+);
+
+SettingSchema.index({ key: 1 }, { unique: true });
+
+export const Setting = model<ISetting>("Setting", SettingSchema);

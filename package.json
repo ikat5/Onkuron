@@ -1,0 +1,43 @@
+{
+  "name": "onkuron-lms",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed:teacher": "node --env-file-if-exists=.env.local --conditions=react-server --import tsx scripts/seed-teacher.ts",
+    "seed:demo": "node --env-file-if-exists=.env.local --conditions=react-server --import tsx scripts/seed-demo.ts",
+    "worker:email": "node --env-file-if-exists=.env.local --conditions=react-server --import tsx scripts/worker.ts",
+    "check:env": "node --env-file-if-exists=.env.local --conditions=react-server --import tsx scripts/check-env.ts"
+  },
+  "dependencies": {
+    "cloudinary": "^2.11.0",
+    "jose": "^6.2.12",
+    "mongoose": "^9.11.2",
+    "next": "^16.4.2",
+    "nodemailer": "^10.1.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.20.5",
+    "@types/nodemailer": "^8.0.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.2",
+    "mongodb-memory-server": "^11.3.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

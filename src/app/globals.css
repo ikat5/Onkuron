@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/* Onkuron design tokens — taken from the logo: deep blue wordmark,
+   leaf green sprout, warm orange accent. */
+@theme {
+  /* Primary blue #1555A4 (logo wordmark) */
+  --color-brand-50: #eef4fc;
+  --color-brand-100: #d8e6f8;
+  --color-brand-200: #b2cdf0;
+  --color-brand-300: #7eaae3;
+  --color-brand-500: #2a6bc0;
+  --color-brand-600: #1555a4;
+  --color-brand-700: #104788;
+  --color-brand-800: #0d396d;
+  --color-brand-900: #0a2a52;
+
+  /* Growth green #319447 (sprout); 600/700 are darkened for white-text contrast */
+  --color-leaf-50: #edf8ef;
+  --color-leaf-100: #d3eed8;
+  --color-leaf-400: #4cb262;
+  --color-leaf-500: #319447;
+  --color-leaf-600: #2a7f3d;
+  --color-leaf-700: #216532;
+
+  /* Accent orange #F28A43 */
+  --color-sun-50: #fff4ec;
+  --color-sun-100: #ffe4cf;
+  --color-sun-400: #f5a066;
+  --color-sun-500: #f28a43;
+  --color-sun-600: #d96f27;
+  --color-sun-700: #b0541a;
+
+  /* Cinematic dark surfaces */
+  --color-night-700: #1a2742;
+  --color-night-800: #111c33;
+  --color-night-900: #0b1426;
+  --color-night-950: #070d1a;
+
+  --color-ink: #172033;
+  --color-muted: #586379;
+  --color-line: #e2e7f0;
+  --color-canvas: #f5f7fa;
+
+  --font-sans: var(--font-hind), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Headings: Latin display face, Bengali glyphs fall back to Hind Siliguri. */
+  --font-display: var(--font-jakarta), var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 1rem;
+
+  --shadow-lift: 0 1px 2px rgb(23 32 51 / 0.04), 0 12px 32px -12px rgb(21 85 164 / 0.28);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-caret: caret 1s steps(1) infinite;
+  --animate-pulse-soft: pulse-soft 3s ease-in-out infinite;
+  --animate-fade-up: fade-up 0.6s var(--ease-out-soft) both;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes caret {
+    50% { opacity: 0; }
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-sun-400);
+    outline-offset: 2px;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+  /* Motion is decorative only: honour the user's reduced-motion setting everywhere. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Component classes. @utility (not @layer components) so they can be composed with @apply. */
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition duration-200 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+}
+
+@utility btn-leaf {
+    @apply btn bg-leaf-600 text-white hover:bg-leaf-700;
+}
+
+@utility btn-sun {
+    /* Dark text: white on orange fails WCAG contrast. */
+    @apply btn bg-sun-500 text-ink hover:bg-sun-400;
+}
+
+@utility btn-light {
+    @apply btn bg-white text-brand-700 hover:bg-brand-50;
+}
+
+@utility btn-ghost-dark {
+    @apply btn border border-white/25 text-white hover:border-white/60 hover:bg-white/10;
+}
+
+/* Interactive surface: gentle lift + shadow. No layout shift (transform only). */
+@utility lift {
+    @apply transition duration-300 ease-out-soft hover:-translate-y-1 hover:shadow-lift focus-visible:-translate-y-1 focus-visible:shadow-lift;
+}
+
+@utility eyebrow {
+    @apply text-xs font-bold tracking-[0.16em] uppercase;
+}
+
+@utility btn-outline {
+    @apply btn border border-line bg-white text-ink hover:border-brand-200 hover:bg-brand-50;
+}
+
+@utility btn-danger {
+    @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50;
+}
+
+@utility card {
+    @apply rounded-[var(--radius-card)] border border-line bg-white shadow-sm;
+}
+
+@utility input {
+    @apply block w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink placeholder:text-muted/70 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 focus:outline-none aria-invalid:border-red-400;
+}
+
+@utility label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+}
+
+@utility badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+
+/* Fills a bar from 0 to its own width (showcase progress, growth path). */
+@keyframes grow {
+  from {
+    width: 0;
+  }
+}
