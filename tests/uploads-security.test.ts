@@ -220,6 +220,19 @@ describe("authorization and web security", () => {
     const { t } = await world();
     const evil = await call(courses.POST, { cookie: t.cookie, body: { title: "X course", price: 5 }, headers: { origin: "https://evil.example" } });
     expect(evil.status).toBe(403);
+    const crossSite = await call(courses.POST, {
+      cookie: t.cookie,
+      body: { title: "X course", price: 5 },
+      headers: { origin: "http://localhost:3000", "sec-fetch-site": "cross-site" },
+    });
+    expect(crossSite.status).toBe(403);
+    // Browser-set Sec-Fetch-Site wins even when the deployed host differs from APP_URL.
+    const sameSite = await call(courses.POST, {
+      cookie: t.cookie,
+      body: { title: "Y course", price: 5 },
+      headers: { origin: "https://onkuron.onrender.com", "sec-fetch-site": "same-origin" },
+    });
+    expect(sameSite.status).not.toBe(403);
     const form = await call(courses.POST, { cookie: t.cookie, body: "title=x", headers: { "content-type": "application/x-www-form-urlencoded" } });
     expect(form.status).toBe(400);
   });

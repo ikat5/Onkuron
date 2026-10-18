@@ -16,14 +16,18 @@ export function clientIp(headers: Headers): string {
  * CSRF defence for cookie-authenticated mutations. Combined with
  * SameSite=Lax cookies and a required JSON content type (which cross-site
  * HTML forms cannot send without a CORS preflight we never approve), this
- * rejects requests whose Origin is not the configured application origin.
+ * rejects requests that a browser did not send from this site.
+ *
+ * Sec-Fetch-Site is set by the browser itself (scripts cannot forge it), so
+ * it is checked first: it stays correct even when APP_URL is misconfigured
+ * or the app is reached through another hostname. Browsers that don't send
+ * it fall back to comparing Origin with the configured application origin.
  */
 export function isTrustedOrigin(headers: Headers): boolean {
-  const appOrigin = new URL(getAppUrl()).origin;
-  const origin = headers.get("origin");
-  if (origin) return origin === appOrigin;
   const fetchSite = headers.get("sec-fetch-site");
   if (fetchSite) return fetchSite === "same-origin";
+  const origin = headers.get("origin");
+  if (origin) return origin === new URL(getAppUrl()).origin;
   // Non-browser clients send neither header; they cannot carry a victim's cookies.
   return true;
 }
