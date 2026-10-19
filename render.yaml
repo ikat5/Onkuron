@@ -34,9 +34,9 @@ services:
         sync: false
       - key: EMAIL_FROM
         sync: false
-      # Render blocks outbound SMTP, so email goes through Resend's HTTPS API.
-      # EMAIL_FROM must use a domain verified in Resend (or onboarding@resend.dev for testing).
-      - key: RESEND_API_KEY
+      # Render blocks outbound SMTP, so email goes through Brevo's HTTPS API.
+      # EMAIL_FROM must be a sender verified in Brevo (Senders, Domains & Dedicated IPs).
+      - key: BREVO_API_KEY
         sync: false
       - key: TEACHER_EMAIL
         sync: false

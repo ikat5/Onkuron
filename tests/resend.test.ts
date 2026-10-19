@@ -49,3 +49,31 @@ describe("Resend email provider", () => {
     expect(retry.transient).toBe(true);
   });
 });
+
+describe("Brevo email provider", () => {
+  const BREVO = "xkeysib-test-brevo-key-should-never-leak";
+
+  it("takes priority over Resend and sends the sender as name + email", async () => {
+    applyTestEnv({ BREVO_API_KEY: BREVO, RESEND_API_KEY: KEY });
+    setMailTransport(null);
+    expect(getEmailEnv().provider).toBe("brevo");
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ messageId: "<abc@smtp-relay>" }), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await getMailTransport().send({ to: "a@example.test", subject: "Hi", html: "<p>Hi</p>", text: "Hi" });
+    expect(result.messageId).toBe("<abc@smtp-relay>");
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.brevo.com/v3/smtp/email");
+    expect((init.headers as Record<string, string>)["api-key"]).toBe(BREVO);
+    expect(JSON.parse(String(init.body))).toMatchObject({ sender: { name: "Onkuron", email: "no-reply@example.test" }, to: [{ email: "a@example.test" }], htmlContent: "<p>Hi</p>" });
+  });
+
+  it("reports an unverified sender as a permanent failure without leaking the key", async () => {
+    applyTestEnv({ BREVO_API_KEY: BREVO });
+    setMailTransport(null);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ code: "unauthorized", message: `Sender not valid (${BREVO})` }), { status: 400 })));
+    const err = await sendEmailNow("verify_email", "a@example.test", { name: "A", link: "http://localhost:3000/verify-email#t", expiresInHours: 24 }).catch((e) => e);
+    expect(err).toBeInstanceOf(EmailDeliveryError);
+    expect(err.transient).toBe(false);
+    expect(err.message).not.toContain(BREVO);
+  });
+});

@@ -12,7 +12,8 @@ export function redactString(value: string): string {
   return value
     .replace(/(mongodb(?:\+srv)?:\/\/)[^@/\s]+@/gi, "$1***:***@")
     .replace(/([?&](?:token|signature|api_key|api_secret)=)[^&\s]+/gi, "$1***")
-    .replace(/\bre_[A-Za-z0-9_]{8,}/g, "re_***");
+    .replace(/\bre_[A-Za-z0-9_]{8,}/g, "re_***")
+    .replace(/\bxkeysib-[A-Za-z0-9-]{8,}/g, "xkeysib-***");
 }
 
 export function redact(value: unknown, depth = 0): unknown {
