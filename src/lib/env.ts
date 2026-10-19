@@ -67,7 +67,16 @@ const authSchema = z.object({
   TRUST_PROXY: bool(false),
 });
 
-const emailSchema = z.object({
+/**
+ * Email goes through Resend's HTTPS API when RESEND_API_KEY is set (hosts such
+ * as Render block outbound SMTP), otherwise through SMTP.
+ */
+const resendSchema = z.object({
+  EMAIL_FROM: str(),
+  RESEND_API_KEY: str().refine((v) => v.startsWith("re_"), { message: "RESEND_API_KEY must start with re_" }),
+});
+
+const smtpSchema = z.object({
   EMAIL_FROM: str(),
   SMTP_HOST: str(),
   SMTP_PORT: z.coerce.number().int().min(1).max(65535),
@@ -95,7 +104,16 @@ const teacherSchema = z.object({
 
 export const getDbEnv = cached(() => parse("Database", dbSchema));
 export const getAuthEnv = cached(() => parse("Authentication", authSchema));
-export const getEmailEnv = cached(() => parse("Email (SMTP)", emailSchema));
+export type EmailEnv =
+  | ({ provider: "resend" } & z.infer<typeof resendSchema>)
+  | ({ provider: "smtp" } & z.infer<typeof smtpSchema>);
+
+export const getEmailEnv = cached((): EmailEnv => {
+  if (emptyToUndefined(process.env.RESEND_API_KEY) !== undefined) {
+    return { provider: "resend", ...parse("Email (Resend)", resendSchema) };
+  }
+  return { provider: "smtp", ...parse("Email (SMTP)", smtpSchema) };
+});
 export const getCloudinaryEnv = cached(() => parse("Cloudinary", cloudinarySchema));
 export const getTeacherEnv = () => parse("Teacher seeding", teacherSchema);
 

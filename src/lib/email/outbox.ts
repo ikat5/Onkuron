@@ -76,7 +76,7 @@ export async function deliver(doc: NonNullable<Awaited<ReturnType<typeof claim>>
     const notConfigured = err instanceof ConfigError;
     const transient = notConfigured || !(err instanceof EmailDeliveryError) || err.transient;
     const message = notConfigured
-      ? "SMTP is not configured"
+      ? "Email is not configured"
       : err instanceof EmailDeliveryError
         ? err.message
         : "Unexpected error while sending";

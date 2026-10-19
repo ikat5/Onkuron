@@ -31,12 +31,12 @@ export default async function EmailLogPage({ searchParams }: { searchParams: Pro
     <>
       <PageHeader
         title="Email log"
-        subtitle="Notification emails are queued and retried automatically with backoff. “Sent” means the SMTP server accepted the message — not that it reached the inbox."
+        subtitle="Notification emails are queued and retried automatically with backoff. “Sent” means the email provider accepted the message — not that it reached the inbox."
         action={<ActionButton url="/api/teacher/emails/process" label="Process queue now" className="btn-outline" />}
       />
       {!isEmailConfigured() && (
         <div className="mb-4">
-          <Alert tone="warning">SMTP is not configured — queued emails will wait until it is.</Alert>
+          <Alert tone="warning">Email is not configured — queued emails will wait until it is.</Alert>
         </div>
       )}
       <div className="mb-4 flex flex-wrap gap-2">

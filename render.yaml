@@ -34,17 +34,9 @@ services:
         sync: false
       - key: EMAIL_FROM
         sync: false
-      - key: SMTP_HOST
-        value: smtp.gmail.com
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_SECURE
-        value: "false"
-      - key: SMTP_REQUIRE_TLS
-        value: "true"
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
+      # Render blocks outbound SMTP, so email goes through Resend's HTTPS API.
+      # EMAIL_FROM must use a domain verified in Resend (or onboarding@resend.dev for testing).
+      - key: RESEND_API_KEY
         sync: false
       - key: TEACHER_EMAIL
         sync: false

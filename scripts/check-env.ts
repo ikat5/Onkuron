@@ -3,7 +3,7 @@
  * printing any secret values.
  *
  *   npm run check:env                                   # configuration + MongoDB ping
- *   npm run check:env -- --smtp --cloudinary            # also verify SMTP login and Cloudinary API
+ *   npm run check:env -- --smtp --cloudinary            # also verify SMTP login (SMTP provider only) and Cloudinary API
  *   npm run check:env -- --send-test you@example.com    # send a real test email
  */
 import { featureStatus } from "@/lib/env";
@@ -26,10 +26,11 @@ async function main() {
       await disconnectDB();
     }
   }
-  if (status.email.ok && process.argv.includes("--smtp")) {
+  const { getEmailEnv } = await import("@/lib/env");
+  const env = status.email.ok ? getEmailEnv() : null;
+  if (env) console.log(`  email provider: ${env.provider}`);
+  if (env?.provider === "smtp" && process.argv.includes("--smtp")) {
     const nodemailer = (await import("nodemailer")).default;
-    const { getEmailEnv } = await import("@/lib/env");
-    const env = getEmailEnv();
     const t = nodemailer.createTransport({
       host: env.SMTP_HOST, port: env.SMTP_PORT, secure: env.SMTP_SECURE, requireTLS: !env.SMTP_SECURE && env.SMTP_REQUIRE_TLS,
       auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
@@ -52,14 +53,15 @@ async function main() {
     try {
       const { messageId } = await getMailTransport().send({
         to,
-        subject: "Onkuron SMTP test",
+        subject: "Onkuron email test",
         text: "This is a test message from `npm run check:env -- --send-test`. Email delivery is configured.",
         html: "<p>This is a test message from <code>npm run check:env -- --send-test</code>. Email delivery is configured.</p>",
       });
-      console.log(`✔ SMTP accepted a test message (id ${messageId}). Check the inbox of ${to}.`);
+      console.log(`✔ ${env!.provider} accepted a test message (id ${messageId}). Check the inbox of ${to}.`);
     } catch (e) {
-      const err = e as { code?: string; responseCode?: number };
-      console.log(`✘ Sending the test message failed (${err.code ?? "error"}${err.responseCode ? ` ${err.responseCode}` : ""})`);
+      const err = e as { code?: string; responseCode?: number; status?: number; message?: string };
+      const code = err.code ?? err.status ?? "error";
+      console.log(`✘ Sending the test message failed (${code}${err.responseCode ? ` ${err.responseCode}` : ""}: ${err.message ?? ""})`);
       process.exitCode = 1;
     }
     process.exit();

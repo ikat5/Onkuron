@@ -175,7 +175,7 @@ describe("teacher decisions and notification emails", () => {
     const msg = await EmailOutbox.findOne({ template: "enrollment_approved" }).lean();
     expect(msg!.status).toBe("failed");
     expect(msg!.attempts).toBe(0);
-    expect(msg!.lastError).toBe("SMTP is not configured");
+    expect(msg!.lastError).toBe("Email is not configured");
     expect(fakeMail.sent).toHaveLength(0);
   });
 });

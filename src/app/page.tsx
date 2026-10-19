@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CourseCard } from "@/components/course-card";
 import { HeroShowcase } from "@/components/home/hero-showcase";
+import { IctLab } from "@/components/home/ict-lab/ict-lab";
 import { Icon, type IconName } from "@/components/icons";
 import { IntroVideo } from "@/components/intro-video";
 import { SectionHeading } from "@/components/section-heading";
@@ -70,12 +71,12 @@ export default async function Home() {
             <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-brand-100">
               <span className="size-1.5 rounded-full bg-leaf-400" /> অঙ্কুরণ · HSC ICT &amp; Web Development
             </p>
-            <h1 className="mt-5 text-5xl leading-[1.02] font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="mt-5 text-4xl leading-[1.05] font-extrabold tracking-tight min-[400px]:text-5xl sm:text-6xl lg:text-7xl">
               Learn Today.
               <br />
               <span className="bg-gradient-to-r from-sun-400 via-sun-500 to-leaf-400 bg-clip-text text-transparent">Build Tomorrow.</span>
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-brand-100/85">
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-brand-100/85 sm:text-lg">
               Master HSC ICT and modern web development through structured lessons, practical learning, and guidance from dedicated teachers.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -95,6 +96,24 @@ export default async function Home() {
             </ul>
           </div>
           <HeroShowcase />
+        </Container>
+      </section>
+
+      {/* HSC ICT syllabus, animated and interactive */}
+      <section aria-labelledby="ict-lab-title" className="bg-canvas py-16 sm:py-20">
+        <Container>
+          <SectionHeading id="ict-lab-title" eyebrow="HSC ICT Lab" title="See the HSC ICT syllabus come alive" align="center">
+            Flip logic inputs, run a full adder, watch HTML build a page, trace a C program and query a database — the exact topics you will master in our HSC ICT course.
+          </SectionHeading>
+          <IctLab />
+          <div className="mt-8 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-center">
+            <Link href="/courses?category=hsc-ict" className="btn-primary px-6 py-3.5 text-base">
+              Enroll in HSC ICT <Icon name="right" />
+            </Link>
+            <Link href="/register" className="btn-outline px-6 py-3.5 text-base">
+              Create a free account
+            </Link>
+          </div>
         </Container>
       </section>
 

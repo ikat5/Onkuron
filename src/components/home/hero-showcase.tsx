@@ -1,52 +1,41 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/icons";
+import { useReducedMotion } from "./motion";
 
 const INTERVAL_MS = 6500;
-
-function subscribeReducedMotion(cb: () => void) {
-  const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-}
-const useReducedMotion = () =>
-  useSyncExternalStore(
-    subscribeReducedMotion,
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    () => false,
-  );
 
 /* ---------- Panel 1: HSC ICT ---------- */
 function IctPanel() {
   const bits = ["1", "0", "1", "1"];
   return (
-    <div className="grid h-full grid-cols-[1.1fr_1fr] gap-4 p-5 sm:p-6">
-      <div className="relative flex items-center justify-center rounded-2xl border border-white/10 bg-night-800/80">
+    <div className="grid h-full gap-3 p-4 sm:grid-cols-[1.1fr_1fr] sm:gap-4 sm:p-6">
+      <div className="relative flex items-center justify-center rounded-2xl border border-white/10 bg-night-800/80 py-6 sm:py-0">
         {/* CPU with traces */}
-        <div className="relative size-28 sm:size-32">
+        <div className="relative size-20 sm:size-32">
           {[0, 1, 2, 3].map((i) => (
             <span key={`t${i}`} className="absolute top-1/2 h-px w-[140%] -translate-y-1/2 bg-gradient-to-r from-transparent via-brand-300/50 to-transparent" style={{ left: "-20%", transform: `translateY(-50%) rotate(${i * 45}deg)` }} />
           ))}
           <div className="relative flex size-full items-center justify-center rounded-xl border-2 border-brand-300/70 bg-gradient-to-br from-brand-600 to-brand-800 shadow-[0_0_40px_-6px] shadow-brand-500">
-            <Icon name="chip" className="size-12 text-white" />
+            <Icon name="chip" className="size-9 text-white sm:size-12" />
           </div>
           {[0, 1, 2].map((i) => (
             <span key={`p${i}`} className="absolute size-2 animate-pulse-soft rounded-full bg-sun-400" style={{ top: `${15 + i * 35}%`, left: i % 2 ? "-12%" : "104%", animationDelay: `${i * 0.6}s` }} />
           ))}
         </div>
       </div>
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-col">
         <div className="rounded-xl border border-white/10 bg-white/5 p-3">
           <p className="text-[10px] font-semibold tracking-wider text-brand-200 uppercase">Number system</p>
-          <p className="mt-1 flex items-center gap-1 font-mono text-lg font-bold text-white">
+          <p className="mt-1 flex items-center gap-x-0.5 font-mono text-sm font-bold whitespace-nowrap text-white sm:gap-x-1 sm:text-lg">
             {bits.map((b, i) => (
               <span key={i} className="animate-fade-up" style={{ animationDelay: `${0.3 + i * 0.25}s` }}>
                 {b}
               </span>
             ))}
             <sub className="text-xs text-brand-200">2</sub>
-            <span className="mx-1 text-brand-200">=</span>
+            <span className="mx-0.5 text-brand-200 sm:mx-1">=</span>
             <span className="animate-fade-up text-sun-400" style={{ animationDelay: "1.5s" }}>
               11
             </span>
@@ -69,7 +58,7 @@ function IctPanel() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white">
+        <div className="col-span-2 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white">
           <Icon name="server" className="size-4 text-leaf-400" /> Networking · Database · C
         </div>
       </div>
@@ -89,7 +78,7 @@ const CODE = [
 
 function WebPanel() {
   return (
-    <div className="grid h-full grid-cols-[1.15fr_1fr] gap-4 p-5 sm:p-6">
+    <div className="grid h-full gap-3 p-4 sm:grid-cols-[1.15fr_1fr] sm:gap-4 sm:p-6">
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-night-950/90">
         <div className="flex items-center gap-1.5 border-b border-white/10 px-3 py-2">
           <span className="size-2.5 rounded-full bg-red-400/80" />
@@ -114,7 +103,7 @@ function WebPanel() {
         <div className="flex items-center gap-1 border-b border-line bg-canvas px-2 py-1.5">
           <span className="h-3 flex-1 rounded-full bg-white px-2 font-mono text-[8px] leading-3 text-muted ring-1 ring-line">localhost:3000</span>
         </div>
-        <div className="flex flex-1 flex-col justify-center gap-2 p-3">
+        <div className="flex flex-1 flex-col justify-center gap-2 p-3 max-sm:min-h-32">
           <div className="h-2 w-1/3 rounded-full bg-brand-100" />
           <p className="animate-fade-up font-display text-base leading-tight font-extrabold text-ink" style={{ animationDelay: "1.2s" }}>
             Learn. Build.
@@ -142,14 +131,14 @@ const STEPS = [
 
 function GrowthPanel() {
   return (
-    <div className="flex h-full flex-col justify-center gap-6 p-5 sm:p-8">
+    <div className="flex h-full flex-col justify-center gap-6 px-4 py-8 sm:p-8">
       <div className="relative">
-        <div className="absolute top-6 right-6 left-6 h-1 rounded-full bg-white/10" />
-        <div className="absolute top-6 left-6 h-1 origin-left rounded-full bg-gradient-to-r from-leaf-400 via-sun-400 to-sun-500 transition-[width] duration-[2500ms] ease-out-soft" style={{ width: "calc(100% - 3rem)", animation: "grow 2.6s var(--ease-out-soft) both" }} />
+        <div className="absolute top-5 right-5 left-5 h-1 rounded-full bg-white/10 sm:top-6 sm:right-6 sm:left-6" />
+        <div className="absolute top-5 left-5 h-1 w-[calc(100%-2.5rem)] origin-left rounded-full bg-gradient-to-r from-leaf-400 via-sun-400 to-sun-500 sm:top-6 sm:left-6 sm:w-[calc(100%-3rem)]" style={{ animation: "grow 2.6s var(--ease-out-soft) both" }} />
         <ol className="relative flex justify-between">
           {STEPS.map((s, i) => (
             <li key={s.label} className="flex flex-col items-center gap-2">
-              <span className="animate-fade-up flex size-12 items-center justify-center rounded-full border-2 border-white/20 bg-night-800 text-white shadow-lg" style={{ animationDelay: `${0.3 + i * 0.5}s` }}>
+              <span className="animate-fade-up flex size-10 items-center justify-center rounded-full border-2 border-white/20 bg-night-800 text-white shadow-lg sm:size-12" style={{ animationDelay: `${0.3 + i * 0.5}s` }}>
                 <Icon name={s.icon} className={`size-5 ${i === STEPS.length - 1 ? "text-sun-400" : "text-leaf-400"}`} />
               </span>
               <span className="text-[11px] font-semibold text-brand-100 sm:text-xs">{s.label}</span>
@@ -157,15 +146,15 @@ function GrowthPanel() {
           ))}
         </ol>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {[
           ["Lessons", "Structured"],
           ["Resources", "Notes & slides"],
           ["Progress", "Tracked"],
         ].map(([k, v], i) => (
-          <div key={k} className="animate-fade-up rounded-xl border border-white/10 bg-white/5 p-3 text-center" style={{ animationDelay: `${1.8 + i * 0.2}s` }}>
+          <div key={k} className="animate-fade-up rounded-xl border border-white/10 bg-white/5 px-1.5 py-3 text-center sm:p-3" style={{ animationDelay: `${1.8 + i * 0.2}s` }}>
             <p className="text-[10px] tracking-wider text-brand-200 uppercase">{k}</p>
-            <p className="mt-0.5 text-sm font-bold text-white">{v}</p>
+            <p className="mt-0.5 text-xs font-bold text-white sm:text-sm">{v}</p>
           </div>
         ))}
       </div>
@@ -209,7 +198,8 @@ export function HeroShowcase() {
     >
       <div aria-hidden className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-brand-500/40 via-leaf-500/20 to-sun-500/30 opacity-70 blur-2xl" />
       <div className="relative overflow-hidden rounded-[1.5rem] border border-white/15 bg-gradient-to-br from-night-800 via-brand-900 to-night-900 shadow-2xl">
-        <div className="relative aspect-[16/11] sm:aspect-[16/10]">
+        {/* All panels share one grid cell, so the tallest one sets the height: nothing is clipped on narrow phones. */}
+        <div className="grid sm:aspect-[16/10]">
           {PANELS.map((p, i) => {
             const active = i === index;
             return (
@@ -221,16 +211,16 @@ export function HeroShowcase() {
                 aria-label={`${i + 1} of ${PANELS.length}: ${p.tab}`}
                 aria-hidden={!active}
                 inert={!active}
-                className={`absolute inset-0 transition-all duration-700 ease-out-soft ${active ? "scale-100 opacity-100" : "pointer-events-none scale-[0.98] opacity-0"}`}
+                className={`[grid-area:1/1] transition-all duration-700 ease-out-soft ${active ? "scale-100 opacity-100" : "pointer-events-none scale-[0.98] opacity-0"}`}
               >
-                {/* Remount on activation so the panel's entrance animation replays. */}
-                {active && <p.Panel key={`${p.id}-${index}`} />}
+                {/* Inactive panels stay rendered to reserve height; remounting on activation replays the entrance animation. */}
+                <p.Panel key={active ? "active" : "idle"} />
               </div>
             );
           })}
         </div>
-        <div className="border-t border-white/10 bg-night-950/60 px-5 py-4" aria-live={rotating ? "off" : "polite"}>
-          <p className="font-display text-lg font-bold text-white">{PANELS[index].caption}</p>
+        <div className="border-t border-white/10 bg-night-950/60 px-4 py-4 sm:px-5" aria-live={rotating ? "off" : "polite"}>
+          <p className="font-display text-base font-bold text-white sm:text-lg">{PANELS[index].caption}</p>
           <p className="mt-0.5 text-sm text-brand-100/80">{PANELS[index].sub}</p>
           <div className="mt-3 flex items-center gap-2">
             <div role="tablist" aria-label="Choose a showcase" className="flex flex-1 gap-2">

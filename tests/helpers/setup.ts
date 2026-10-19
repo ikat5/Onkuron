@@ -29,7 +29,8 @@ export const TEST_ENV: Record<string, string> = {
 };
 
 export function applyTestEnv(overrides: Record<string, string | undefined> = {}) {
-  for (const [k, v] of Object.entries({ ...TEST_ENV, ...overrides })) {
+  // Optional keys some tests set are cleared unless overridden, so they never leak between tests.
+  for (const [k, v] of Object.entries({ RESEND_API_KEY: undefined, ...TEST_ENV, ...overrides })) {
     if (v === undefined) delete process.env[k];
     else process.env[k] = v;
   }
