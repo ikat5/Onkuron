@@ -16,7 +16,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     title: label ? `${label} courses` : "Courses — HSC ICT & Web Development",
     description: label
       ? `Online ${label} courses at Onkur with structured video lessons, notes and teacher support.`
-      : "Browse Onkur's online courses in HSC ICT, programming, frontend, backend and full-stack web development.",
+      : "Browse Onkur's online courses in HSC and SSC ICT, physics, chemistry, math, biology and programming.",
     alternates: { canonical: label ? `/courses?category=${category}` : "/courses" },
   };
 }

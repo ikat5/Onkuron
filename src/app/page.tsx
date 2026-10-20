@@ -22,10 +22,15 @@ export const metadata: Metadata = {
 
 const CATEGORY_ICON: Record<string, IconName> = {
   "hsc-ict": "chip",
+  "hsc-physics": "atom",
+  "hsc-chemistry": "flask",
+  "hsc-math": "sigma",
+  "hsc-biology": "leaf",
+  "ssc-ict": "chip",
+  "ssc-physics": "atom",
+  "ssc-math": "sigma",
+  "ssc-biology": "leaf",
   programming: "code",
-  frontend: "grid",
-  backend: "server",
-  fullstack: "layers",
   projects: "rocket",
 };
 
@@ -159,7 +164,7 @@ export default async function Home() {
       <section aria-labelledby="categories-title" className="bg-canvas py-20">
         <Container>
           <SectionHeading id="categories-title" eyebrow="Learning paths" title="What would you like to learn?" align="center">
-            From the HSC ICT syllabus to full-stack web apps — choose a path and filter the catalogue.
+            SSC and HSC science, ICT and programming — choose a path and filter the catalogue.
           </SectionHeading>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {COURSE_CATEGORIES.map((c) => {
