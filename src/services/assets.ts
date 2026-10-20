@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { AssetDeletion } from "@/models/AssetDeletion";
 import { Course, type IAsset } from "@/models/Course";
 import { Lesson } from "@/models/Lesson";
+import { Setting } from "@/models/Setting";
 import { TeacherProfile } from "@/models/TeacherProfile";
 
 /**
@@ -39,6 +40,7 @@ async function stillReferenced(publicId: string) {
   return Boolean(
     (await Course.exists({ "thumbnail.publicId": publicId })) ||
       (await TeacherProfile.exists({ "photo.publicId": publicId })) ||
+      (await Setting.exists({ "teamPhoto.publicId": publicId })) ||
       (await Lesson.exists({ $or: [{ "video.publicId": publicId }, { "resources.asset.publicId": publicId }] })),
   );
 }

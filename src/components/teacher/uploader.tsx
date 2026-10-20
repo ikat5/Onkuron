@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { api } from "@/lib/api-client";
 
 /** Lesson videos are YouTube links, so only images and documents are uploaded. */
-export type UploadKind = "thumbnail" | "teacher_photo" | "pdf" | "slides" | "document";
+export type UploadKind = "thumbnail" | "teacher_photo" | "team_photo" | "pdf" | "slides" | "document";
 
 interface SignResponse {
   intentId: string;
@@ -16,6 +16,7 @@ interface SignResponse {
 const ACCEPT: Record<UploadKind, string> = {
   thumbnail: "image/jpeg,image/png,image/webp",
   teacher_photo: "image/jpeg,image/png,image/webp",
+  team_photo: "image/jpeg,image/png,image/webp",
   pdf: "application/pdf,.pdf",
   slides: ".ppt,.pptx,.odp,.key",
   document: ".doc,.docx,.odt,.rtf,.txt,.xls,.xlsx,.csv",

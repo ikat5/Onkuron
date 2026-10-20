@@ -91,12 +91,15 @@ export async function listPublishedCourses(opts: { category?: string; limit?: nu
   if (opts.onlyIds) filter._id = { $in: opts.onlyIds.filter((id) => Types.ObjectId.isValid(id)) };
   const query = Course.find(filter).sort({ createdAt: -1 }).select("-description");
   const courses = await (opts.limit ? query.limit(opts.limit) : query).lean();
-  const counts = await Lesson.aggregate<{ _id: Types.ObjectId; n: number }>([
-    { $match: { courseId: { $in: courses.map((c) => c._id) } } },
-    { $group: { _id: "$courseId", n: { $sum: 1 } } },
+  const ids = courses.map((c) => c._id);
+  const [counts, students] = await Promise.all([
+    Lesson.aggregate<{ _id: Types.ObjectId; n: number }>([{ $match: { courseId: { $in: ids } } }, { $group: { _id: "$courseId", n: { $sum: 1 } } }]),
+    // A purchase counts once the teacher has approved the payment.
+    Enrollment.aggregate<{ _id: Types.ObjectId; n: number }>([{ $match: { courseId: { $in: ids }, status: "approved" } }, { $group: { _id: "$courseId", n: { $sum: 1 } } }]),
   ]);
   const byId = new Map(counts.map((c) => [String(c._id), c.n]));
-  return courses.map((c) => ({ ...c, lessonCount: byId.get(String(c._id)) ?? 0 }));
+  const studentsById = new Map(students.map((c) => [String(c._id), c.n]));
+  return courses.map((c) => ({ ...c, lessonCount: byId.get(String(c._id)) ?? 0, studentCount: studentsById.get(String(c._id)) ?? 0 }));
 }
 
 export async function getPublicCourse(slug: string) {

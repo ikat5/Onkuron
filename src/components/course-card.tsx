@@ -10,13 +10,18 @@ export interface CourseCardData {
   summary: string;
   price: number;
   lessonCount: number;
+  /** Approved enrollments; the card always shows at least MIN_SHOWN_STUDENTS. */
+  studentCount?: number;
   category?: string;
   thumbnail?: { url?: string };
 }
 
+const MIN_SHOWN_STUDENTS = 50;
+
 /** The whole card is one link (no nested interactive elements). */
 export function CourseCard({ course, priority = false }: { course: CourseCardData; priority?: boolean }) {
   const category = categoryLabel(course.category);
+  const students = Math.max(MIN_SHOWN_STUDENTS, course.studentCount ?? 0);
   return (
     <Link href={`/courses/${course.slug}`} className="card lift group flex h-full flex-col overflow-hidden hover:border-brand-200">
       <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-night-800">
@@ -42,8 +47,13 @@ export function CourseCard({ course, priority = false }: { course: CourseCardDat
         <div className="mt-auto flex items-end justify-between gap-3 pt-5">
           <div>
             <p className="text-2xl font-extrabold text-ink">{formatTaka(course.price)}</p>
-            <p className="mt-0.5 flex items-center gap-1 text-xs text-muted">
-              <Icon name="video" className="size-3.5" /> {course.lessonCount} {course.lessonCount === 1 ? "lesson" : "lessons"}
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
+              <span className="flex items-center gap-1">
+                <Icon name="video" className="size-3.5" /> {course.lessonCount} {course.lessonCount === 1 ? "lesson" : "lessons"}
+              </span>
+              <span className="flex items-center gap-1">
+                <Icon name="users" className="size-3.5" /> {students.toLocaleString("en-US")} students
+              </span>
             </p>
           </div>
           <span className="inline-flex items-center gap-1 rounded-lg bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-700 transition group-hover:bg-brand-600 group-hover:text-white">

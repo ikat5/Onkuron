@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { TeacherCard } from "@/components/teacher-card";
 import { Container } from "@/components/ui";
 import { connectDB } from "@/lib/db";
+import { getTeamPhotoUrl } from "@/services/settings";
 import { listPublicTeacherProfiles } from "@/services/teacher-profile";
 
 export const metadata: Metadata = {
@@ -20,7 +22,7 @@ const APPROACH = [
 
 export default async function TeachersPage() {
   await connectDB().catch(() => null);
-  const profiles = await listPublicTeacherProfiles();
+  const [profiles, teamPhotoUrl] = await Promise.all([listPublicTeacherProfiles(), getTeamPhotoUrl()]);
 
   return (
     <>
@@ -36,6 +38,12 @@ export default async function TeachersPage() {
       </section>
 
       <Container className="py-14">
+        {teamPhotoUrl && (
+          <figure className="card mb-12 overflow-hidden">
+            <Image src={teamPhotoUrl} alt="Onkur's teacher panel" width={1600} height={900} preload sizes="(min-width: 1280px) 1200px, 100vw" className="h-auto w-full" />
+            <figcaption className="px-5 py-3 text-center text-sm font-semibold text-muted">Our teacher panel</figcaption>
+          </figure>
+        )}
         {profiles.length === 0 ? (
           <div className="card flex flex-col items-center px-6 py-16 text-center">
             <span className="flex size-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">

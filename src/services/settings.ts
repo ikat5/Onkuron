@@ -4,6 +4,7 @@ import type { SessionUser } from "@/lib/auth/current";
 import { Setting } from "@/models/Setting";
 import type { z } from "zod";
 import type { IntroInput, settingsSchema } from "@/lib/validation";
+import { queueAssetDeletion } from "./assets";
 
 export async function getSettings() {
   const s = await Setting.findOne({ key: "platform" }).lean();
@@ -62,6 +63,22 @@ export async function getIntroSafe(): Promise<PlatformIntro> {
   } catch {
     return { ...DEFAULT_INTRO };
   }
+}
+
+/** URL of the teacher panel group photo, if uploaded. Never throws (public pages must render). */
+export async function getTeamPhotoUrl(): Promise<string | undefined> {
+  try {
+    const s = await Setting.findOne({ key: "platform" }).select("teamPhoto").lean();
+    return s?.teamPhoto?.url || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function removeTeamPhoto(teacher: SessionUser, ip: string) {
+  const before = await Setting.findOneAndUpdate({ key: "platform" }, { $unset: { teamPhoto: 1 } }, { returnDocument: "before" }).lean();
+  if (before?.teamPhoto) await queueAssetDeletion(before.teamPhoto, "team_photo_removed");
+  await audit({ action: "settings.team_photo_removed", actor: teacher, ip });
 }
 
 export async function updateIntro(teacher: SessionUser, input: IntroInput, ip: string) {

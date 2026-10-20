@@ -10,6 +10,7 @@ import { logger } from "@/lib/logger";
 import type { SessionUser } from "@/lib/auth/current";
 import { Course, type IAsset } from "@/models/Course";
 import { Lesson, type ResourceKind } from "@/models/Lesson";
+import { Setting } from "@/models/Setting";
 import { TeacherProfile } from "@/models/TeacherProfile";
 import { UploadIntent, type UploadKind } from "@/models/UploadIntent";
 import { hasApprovedEnrollment } from "./enrollment";
@@ -22,7 +23,7 @@ interface KindRule {
   mimeTypes: string[];
   maxBytes: () => number;
   needsLesson: boolean;
-  /** false for uploads that aren't course material (the teacher profile photo). */
+  /** false for uploads that aren't course material (teacher profile and group photos). */
   needsCourse: boolean;
 }
 
@@ -44,6 +45,15 @@ export const KIND_RULES: Record<UploadKind, KindRule> = {
     needsCourse: true,
   },
   teacher_photo: {
+    resourceType: "image",
+    deliveryType: "upload",
+    extensions: ["jpg", "jpeg", "png", "webp"],
+    mimeTypes: ["image/jpeg", "image/png", "image/webp"],
+    maxBytes: () => getCloudinaryEnv().MAX_IMAGE_MB * MB,
+    needsLesson: false,
+    needsCourse: false,
+  },
+  team_photo: {
     resourceType: "image",
     deliveryType: "upload",
     extensions: ["jpg", "jpeg", "png", "webp"],
@@ -363,6 +373,10 @@ export async function completeUpload(teacher: SessionUser, intentId: string, ip:
     const before = await TeacherProfile.findByIdAndUpdate(intent.profileId, { $set: { photo: asset } }, { returnDocument: "before" }).lean();
     attached = Boolean(before);
     previous = before?.photo;
+  } else if (intent.kind === "team_photo") {
+    const before = await Setting.findOneAndUpdate({ key: "platform" }, { $set: { teamPhoto: asset } }, { upsert: true, returnDocument: "before" }).lean();
+    attached = true;
+    previous = before?.teamPhoto;
   } else if (intent.kind === "thumbnail") {
     const before = await Course.findOneAndUpdate({ _id: intent.courseId }, { $set: { thumbnail: asset } }, { returnDocument: "before" }).lean();
     attached = Boolean(before);
@@ -402,7 +416,7 @@ export async function completeUpload(teacher: SessionUser, intentId: string, ip:
     action: previous ? "asset.replaced" : "asset.uploaded",
     actor: teacher,
     targetType: intent.kind,
-    targetId: String(intent.lessonId ?? intent.courseId ?? intent.profileId),
+    targetId: String(intent.lessonId ?? intent.courseId ?? intent.profileId ?? "platform"),
     ip,
     metadata: { publicId: asset.publicId, bytes: asset.bytes },
   });

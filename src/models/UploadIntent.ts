@@ -1,7 +1,7 @@
 import { Schema, type Types } from "mongoose";
 import { model } from "./util";
 
-export type UploadKind = "thumbnail" | "teacher_photo" | "video" | "pdf" | "slides" | "document";
+export type UploadKind = "thumbnail" | "teacher_photo" | "team_photo" | "video" | "pdf" | "slides" | "document";
 
 /**
  * Created when the server signs a direct upload. Completing an upload must
@@ -32,7 +32,7 @@ export interface IUploadIntent {
 
 const UploadIntentSchema = new Schema<IUploadIntent>(
   {
-    kind: { type: String, enum: ["thumbnail", "teacher_photo", "video", "pdf", "slides", "document"], required: true },
+    kind: { type: String, enum: ["thumbnail", "teacher_photo", "team_photo", "video", "pdf", "slides", "document"], required: true },
     publicId: { type: String, required: true },
     resourceType: { type: String, enum: ["image", "video", "raw"], required: true },
     deliveryType: { type: String, enum: ["upload", "authenticated"], required: true },

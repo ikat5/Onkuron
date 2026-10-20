@@ -1,4 +1,5 @@
 import { Schema } from "mongoose";
+import { AssetSchema, type IAsset } from "./Course";
 import { model } from "./util";
 
 /**
@@ -17,6 +18,8 @@ export interface ISetting {
    * Only a server-validated YouTube video ID is stored.
    */
   intro?: { youtubeVideoId?: string; title?: string; text?: string };
+  /** Group photo of the teacher panel, shown at the top of Meet Our Teachers. */
+  teamPhoto?: IAsset;
   updatedAt: Date;
 }
 
@@ -36,6 +39,7 @@ const SettingSchema = new Schema<ISetting>(
       title: { type: String, maxlength: 120 },
       text: { type: String, maxlength: 1500 },
     },
+    teamPhoto: AssetSchema,
   },
   { timestamps: { createdAt: false, updatedAt: true } },
 );

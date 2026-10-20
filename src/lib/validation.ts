@@ -187,7 +187,7 @@ export const progressSchema = z.object({
   completed: z.boolean().optional(),
 });
 
-export const UPLOAD_KINDS = ["thumbnail", "teacher_photo", "video", "pdf", "slides", "document"] as const;
+export const UPLOAD_KINDS = ["thumbnail", "teacher_photo", "team_photo", "video", "pdf", "slides", "document"] as const;
 
 export const signUploadSchema = z.object({
   kind: z.enum(UPLOAD_KINDS),
