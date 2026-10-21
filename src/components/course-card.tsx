@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { categoryIcon, categoryLabel } from "@/lib/categories";
+import { categoryIcon } from "@/lib/categories";
 import { Icon } from "./icons";
 import { TiltCard } from "./tilt-card";
 import { formatTaka } from "./ui";
@@ -13,7 +13,9 @@ export interface CourseCardData {
   lessonCount: number;
   /** Approved enrollments; the card always shows at least MIN_SHOWN_STUDENTS. */
   studentCount?: number;
-  category?: string;
+  /** Name of the course's (published) category, shown as a badge. */
+  categoryName?: string;
+  categoryIcon?: string;
   thumbnail?: { url?: string };
 }
 
@@ -26,7 +28,7 @@ const MIN_SHOWN_STUDENTS = 50;
  * `index` staggers the entrance animation across a grid row.
  */
 export function CourseCard({ course, priority = false, index = 0 }: { course: CourseCardData; priority?: boolean; index?: number }) {
-  const category = categoryLabel(course.category);
+  const category = course.categoryName;
   const students = Math.max(MIN_SHOWN_STUDENTS, course.studentCount ?? 0);
   return (
     <TiltCard index={index} className="h-full">
@@ -39,7 +41,7 @@ export function CourseCard({ course, priority = false, index = 0 }: { course: Co
               ) : (
                 <div aria-hidden className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.18),transparent_55%)]">
                   <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:28px_28px]" />
-                  <Icon name={categoryIcon(course.category)} className="relative size-16 text-white/80 drop-shadow-lg" />
+                  <Icon name={categoryIcon(course.categoryIcon)} className="relative size-16 text-white/80 drop-shadow-lg" />
                 </div>
               )}
             </div>
@@ -47,7 +49,7 @@ export function CourseCard({ course, priority = false, index = 0 }: { course: Co
           </div>
           {category && <span className="tilt-float-1 absolute top-3 left-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-brand-700 shadow-md">{category}</span>}
           <span aria-hidden className="tilt-float-2 absolute right-4 -bottom-5 flex size-11 items-center justify-center rounded-xl bg-white text-brand-700 shadow-lg ring-1 ring-line transition-colors duration-300 group-hover:bg-brand-600 group-hover:text-white">
-            <Icon name={categoryIcon(course.category)} className="size-5" />
+            <Icon name={categoryIcon(course.categoryIcon)} className="size-5" />
           </span>
         </div>
         <div className="tilt-text flex flex-1 flex-col px-2 pt-6 pb-2 sm:px-2.5">

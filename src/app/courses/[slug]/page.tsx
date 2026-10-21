@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { Types } from "mongoose";
 import { Icon } from "@/components/icons";
 import { Alert, Container, formatTaka } from "@/components/ui";
-import { categoryLabel } from "@/lib/categories";
 import { connectDB } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/current";
 import { getPublicCourse } from "@/services/courses";
@@ -35,9 +34,8 @@ export default async function CoursePage({ params }: Props) {
   await connectDB();
   const data = await getPublicCourse(slug);
   if (!data) notFound();
-  const { course, lessons } = data;
+  const { course, lessons, categoryName: category } = data;
   const [user, teachers] = await Promise.all([getCurrentUser(), listTeachersForCourse(course._id)]);
-  const category = categoryLabel(course.category);
 
   const latest =
     user?.role === "student"

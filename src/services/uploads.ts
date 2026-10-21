@@ -8,6 +8,7 @@ import { hit, RULES } from "@/lib/security/rate-limit";
 import { audit } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 import type { SessionUser } from "@/lib/auth/current";
+import { Category } from "@/models/Category";
 import { Course, type IAsset } from "@/models/Course";
 import { Lesson, type ResourceKind } from "@/models/Lesson";
 import { Setting } from "@/models/Setting";
@@ -54,6 +55,36 @@ export const KIND_RULES: Record<UploadKind, KindRule> = {
     needsCourse: false,
   },
   team_photo: {
+    resourceType: "image",
+    deliveryType: "upload",
+    extensions: ["jpg", "jpeg", "png", "webp"],
+    mimeTypes: ["image/jpeg", "image/png", "image/webp"],
+    maxBytes: () => getCloudinaryEnv().MAX_IMAGE_MB * MB,
+    needsLesson: false,
+    needsCourse: false,
+  },
+  /** Poster image of the homepage promotional video. */
+  promo_thumbnail: {
+    resourceType: "image",
+    deliveryType: "upload",
+    extensions: ["jpg", "jpeg", "png", "webp"],
+    mimeTypes: ["image/jpeg", "image/png", "image/webp"],
+    maxBytes: () => getCloudinaryEnv().MAX_IMAGE_MB * MB,
+    needsLesson: false,
+    needsCourse: false,
+  },
+  /** Homepage promotional video file, delivered publicly (it's marketing, not course content). */
+  promo_video: {
+    resourceType: "video",
+    deliveryType: "upload",
+    extensions: ["mp4", "webm", "mov", "m4v"],
+    mimeTypes: ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"],
+    maxBytes: () => getCloudinaryEnv().MAX_VIDEO_MB * MB,
+    needsLesson: false,
+    needsCourse: false,
+  },
+  /** Card artwork of a learning category. */
+  category_image: {
     resourceType: "image",
     deliveryType: "upload",
     extensions: ["jpg", "jpeg", "png", "webp"],
@@ -116,6 +147,9 @@ export const KIND_RULES: Record<UploadKind, KindRule> = {
     needsCourse: true,
   },
 };
+
+/** Kinds attached to a category named by `targetId`. */
+const TARGETED = new Set<UploadKind>(["category_image"]);
 
 const INTENT_TTL_MS = 60 * 60_000; // Cloudinary rejects signatures older than one hour anyway.
 export const CHUNK_SIZE = 20 * MB;
@@ -204,6 +238,7 @@ export interface SignUploadInput {
   kind: UploadKind;
   courseId?: string;
   profileId?: string;
+  targetId?: string;
   lessonId?: string;
   resourceId?: string;
   title?: string;
@@ -245,6 +280,9 @@ export async function signUpload(teacher: SessionUser, input: SignUploadInput) {
   } else if (input.kind === "teacher_photo") {
     if (!input.profileId) throw badRequest("Save the profile once before uploading a photo.");
     if (!(await TeacherProfile.exists({ _id: input.profileId }))) throw notFound("Profile not found");
+  } else if (input.kind === "category_image") {
+    if (!input.targetId) throw badRequest("Save the category once before uploading an image.");
+    if (!(await Category.exists({ _id: input.targetId }))) throw notFound("The category was not found");
   }
   if (rule.needsLesson) {
     if (!input.lessonId) throw badRequest("A lesson is required for this upload");
@@ -260,7 +298,7 @@ export async function signUpload(teacher: SessionUser, input: SignUploadInput) {
 
   const random = randomBytes(12).toString("hex");
   // Raw files keep their extension in the public_id (Cloudinary convention for raw assets).
-  const folder = rule.needsCourse ? `onkuron/courses/${input.courseId}` : "onkuron/teacher";
+  const folder = rule.needsCourse ? `onkuron/courses/${input.courseId}` : TARGETED.has(input.kind) || input.kind === "promo_thumbnail" || input.kind === "promo_video" ? "onkuron/site" : "onkuron/teacher";
   const publicId = `${folder}/${input.kind}/${random}${rule.resourceType === "raw" ? `.${ext}` : ""}`;
   const timestamp = Math.floor(Date.now() / 1000);
 
@@ -277,6 +315,7 @@ export async function signUpload(teacher: SessionUser, input: SignUploadInput) {
     deliveryType: rule.deliveryType,
     courseId: rule.needsCourse ? input.courseId : undefined,
     profileId: input.kind === "teacher_photo" ? input.profileId : undefined,
+    targetId: TARGETED.has(input.kind) ? input.targetId : undefined,
     lessonId: input.lessonId,
     resourceId: input.resourceId,
     title: input.title,
@@ -377,6 +416,19 @@ export async function completeUpload(teacher: SessionUser, intentId: string, ip:
     const before = await Setting.findOneAndUpdate({ key: "platform" }, { $set: { teamPhoto: asset } }, { upsert: true, returnDocument: "before" }).lean();
     attached = true;
     previous = before?.teamPhoto;
+  } else if (intent.kind === "promo_thumbnail") {
+    const before = await Setting.findOneAndUpdate({ key: "platform" }, { $set: { "intro.thumbnail": asset } }, { upsert: true, returnDocument: "before" }).lean();
+    attached = true;
+    previous = before?.intro?.thumbnail;
+  } else if (intent.kind === "promo_video") {
+    // An uploaded file replaces the YouTube link.
+    const before = await Setting.findOneAndUpdate({ key: "platform" }, { $set: { "intro.video": asset }, $unset: { "intro.youtubeVideoId": 1 } }, { upsert: true, returnDocument: "before" }).lean();
+    attached = true;
+    previous = before?.intro?.video;
+  } else if (intent.kind === "category_image") {
+    const before = await Category.findByIdAndUpdate(intent.targetId, { $set: { image: asset } }, { returnDocument: "before" }).lean();
+    attached = Boolean(before);
+    previous = before?.image;
   } else if (intent.kind === "thumbnail") {
     const before = await Course.findOneAndUpdate({ _id: intent.courseId }, { $set: { thumbnail: asset } }, { returnDocument: "before" }).lean();
     attached = Boolean(before);
@@ -408,7 +460,8 @@ export async function completeUpload(teacher: SessionUser, intentId: string, ip:
   if (!attached) {
     // The course/lesson disappeared meanwhile: don't leave an orphaned file.
     await queueAssetDeletion(asset, "target_missing");
-    throw notFound(intent.kind === "teacher_photo" ? "The profile no longer exists." : "The course or lesson no longer exists.");
+    const gone: Partial<Record<UploadKind, string>> = { teacher_photo: "The profile no longer exists.", category_image: "The category no longer exists." };
+    throw notFound(gone[intent.kind] ?? "The course or lesson no longer exists.");
   }
   if (previous && previous.publicId !== asset.publicId) await queueAssetDeletion(previous, `replaced_${intent.kind}`);
 
@@ -416,7 +469,7 @@ export async function completeUpload(teacher: SessionUser, intentId: string, ip:
     action: previous ? "asset.replaced" : "asset.uploaded",
     actor: teacher,
     targetType: intent.kind,
-    targetId: String(intent.lessonId ?? intent.courseId ?? intent.profileId ?? "platform"),
+    targetId: String(intent.lessonId ?? intent.courseId ?? intent.profileId ?? intent.targetId ?? "platform"),
     ip,
     metadata: { publicId: asset.publicId, bytes: asset.bytes },
   });

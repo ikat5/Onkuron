@@ -3,8 +3,8 @@ import { ChangePasswordForm, SignOutEverywhere } from "@/components/account-secu
 import { PageHeader } from "@/components/ui";
 import { connectDB } from "@/lib/db";
 import { requireUser } from "@/lib/auth/guards";
-import { getIntro, getSettings } from "@/services/settings";
-import { IntroForm } from "./intro-form";
+import Link from "next/link";
+import { getSettings } from "@/services/settings";
 import { SettingsForm } from "./settings-form";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -12,15 +12,17 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function TeacherSettingsPage() {
   await requireUser("/admin/settings", "teacher");
   await connectDB();
-  const [settings, intro] = await Promise.all([getSettings(), getIntro()]);
+  const settings = await getSettings();
   return (
     <>
       <PageHeader title="Settings" />
-      <section id="intro" className="card mb-6 scroll-mt-24 p-6">
-        <h2 className="mb-1 font-semibold text-ink">Platform introduction video</h2>
-        <p className="mb-5 text-sm text-muted">One video and description, shown in the homepage “Discover Onkur” section.</p>
-        <IntroForm initial={intro} />
-      </section>
+      <p className="mb-6 max-w-3xl rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-800">
+        The homepage promotional video is managed on the{" "}
+        <Link href="/admin/promo-video" className="font-semibold underline">
+          Promo video
+        </Link>{" "}
+        page.
+      </p>
       <section className="card max-w-3xl p-6">
         <h2 className="mb-1 font-semibold text-ink">Payments &amp; support</h2>
         <p className="mb-4 text-sm text-muted">Receiving numbers shown to students on the enrollment page. Never enter PINs or account passwords here.</p>

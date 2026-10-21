@@ -1,18 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { COURSE_CATEGORIES } from "@/lib/categories";
+import { listPublicCategories } from "@/services/categories";
 import { Icon } from "./icons";
 
 const CONTACT_EMAIL = "info.onkuron@gmail.com";
 
 const COLUMNS = [
-  {
-    title: "Learn",
-    links: [
-      { href: "/courses", label: "All courses" },
-      ...COURSE_CATEGORIES.slice(0, 4).map((c) => ({ href: `/courses?category=${c.id}`, label: c.label })),
-    ],
-  },
   {
     title: "Onkur",
     links: [
@@ -33,7 +26,10 @@ const COLUMNS = [
   },
 ];
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  // The first four published categories, in homepage order.
+  const categories = (await listPublicCategories()).slice(0, 4);
+  const columns = [{ title: "Learn", links: [{ href: "/courses", label: "All courses" }, ...categories.map((c) => ({ href: `/courses?category=${c.slug}`, label: c.name }))] }, ...COLUMNS];
   return (
     <footer className="relative mt-16 overflow-hidden bg-night-900 text-brand-100">
       <div aria-hidden className="pointer-events-none absolute -top-40 right-[-10%] size-[28rem] rounded-full bg-brand-600/25 blur-3xl" />
@@ -55,7 +51,7 @@ export function SiteFooter() {
             </a>
           </div>
           <div className="grid gap-8 sm:grid-cols-3">
-            {COLUMNS.map((col) => (
+            {columns.map((col) => (
               <nav key={col.title} aria-label={col.title}>
                 <p className="eyebrow mb-4 text-sun-400">{col.title}</p>
                 <ul className="space-y-2.5 text-sm">

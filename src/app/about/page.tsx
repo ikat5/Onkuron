@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
 import { Container } from "@/components/ui";
-import { COURSE_CATEGORIES } from "@/lib/categories";
+import { listPublicCategories } from "@/services/categories";
 
 export const metadata: Metadata = {
   title: "About Onkur",
@@ -18,7 +18,8 @@ const PRINCIPLES: Array<{ title: string; text: string; icon: IconName }> = [
   { title: "Transparency", text: "Clear prices in taka, mobile-banking payments and a manual verification you can follow.", icon: "shield" },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const categories = await listPublicCategories();
   return (
     <>
       <section className="relative overflow-hidden bg-night-900 text-white">
@@ -58,12 +59,14 @@ export default function AboutPage() {
               What we teach
             </h2>
             <ul className="mt-5 space-y-4">
-              {COURSE_CATEGORIES.map((c) => (
-                <li key={c.id} className="flex gap-3">
+              {categories.map((c) => (
+                <li key={c.slug} className="flex gap-3">
                   <Icon name="check" className="mt-1 size-4 text-leaf-600" />
                   <span>
-                    <span className="font-semibold text-ink">{c.label}</span>
-                    <span className="block text-sm text-muted">{c.blurb}</span>
+                    <Link href={`/courses?category=${c.slug}`} className="font-semibold text-ink hover:text-brand-700 hover:underline">
+                      {c.name}
+                    </Link>
+                    <span className="block text-sm text-muted">{c.description}</span>
                   </span>
                 </li>
               ))}

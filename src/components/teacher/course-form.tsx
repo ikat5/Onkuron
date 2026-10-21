@@ -1,17 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/ui";
 import { Icon } from "@/components/icons";
 import { useToast } from "@/components/toast";
 import { api, type ApiError } from "@/lib/api-client";
-import { COURSE_CATEGORIES } from "@/lib/categories";
 
 interface CourseValues {
   id?: string;
   title: string;
-  slug: string;
   summary: string;
   description: string;
   price: number | "";
@@ -21,23 +20,11 @@ interface CourseValues {
 
 type Errors = Partial<Record<keyof CourseValues, string>>;
 
-const EMPTY: CourseValues = { title: "", slug: "", summary: "", description: "", price: "", category: "", published: false };
-const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-/** Mirrors the server's slugify (the server still decides and de-duplicates). */
-function slugify(title: string) {
-  return title
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-}
+const EMPTY: CourseValues = { title: "", summary: "", description: "", price: "", category: "", published: false };
 
 function validate(v: CourseValues): Errors {
   const e: Errors = {};
   if (v.title.trim().length < 3) e.title = "Use at least 3 characters";
-  if (v.slug && !SLUG_RE.test(v.slug)) e.slug = "Use lowercase letters, numbers and single hyphens";
   if (v.price === "" || !Number.isInteger(Number(v.price)) || Number(v.price) < 1) e.price = "Enter a whole amount of at least ৳1";
   else if (Number(v.price) > 1_000_000) e.price = "Maximum is ৳10,00,000";
   return e;
@@ -59,15 +46,18 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   ) : null;
 }
 
-export function CourseForm({ initial }: { initial?: CourseValues }) {
+export interface CategoryOption {
+  slug: string;
+  name: string;
+  published: boolean;
+}
+
+export function CourseForm({ initial, categories }: { initial?: CourseValues; categories: CategoryOption[] }) {
   const router = useRouter();
   const toast = useToast();
   const isNew = !initial?.id;
   const [saved, setSaved] = useState<CourseValues>(initial ?? EMPTY);
   const [values, setValues] = useState<CourseValues>(initial ?? EMPTY);
-  // New courses follow the title until the teacher edits the slug by hand.
-  const [slugTouched, setSlugTouched] = useState(!isNew);
-  const [editingSlug, setEditingSlug] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [serverError, setServerError] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
@@ -82,11 +72,7 @@ export function CourseForm({ initial }: { initial?: CourseValues }) {
   }, [dirty]);
 
   function set<K extends keyof CourseValues>(key: K, value: CourseValues[K]) {
-    setValues((v) => {
-      const next = { ...v, [key]: value };
-      if (key === "title" && !slugTouched) next.slug = slugify(String(value));
-      return next;
-    });
+    setValues((v) => ({ ...v, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
   }
 
@@ -100,7 +86,6 @@ export function CourseForm({ initial }: { initial?: CourseValues }) {
     }
     const body = {
       title: values.title.trim(),
-      slug: values.slug || undefined,
       summary: values.summary.trim(),
       description: values.description.trim(),
       price: Number(values.price),
@@ -117,10 +102,7 @@ export function CourseForm({ initial }: { initial?: CourseValues }) {
       if (res.error.fields) setErrors(Object.fromEntries(Object.entries(res.error.fields).map(([k, v]) => [k, v?.[0]])) as Errors);
       return;
     }
-    const next = { ...values, slug: res.data.slug };
-    setSaved(next);
-    setValues(next);
-    setEditingSlug(false);
+    setSaved(values);
     if (isNew) {
       toast("Course created. Now add your lessons.");
       router.push(`/admin/courses/${res.data.id}#curriculum`);
@@ -130,7 +112,6 @@ export function CourseForm({ initial }: { initial?: CourseValues }) {
     }
   }
 
-  const slugPreview = values.slug || "your-course-url";
   return (
     <form
       noValidate
@@ -168,55 +149,6 @@ export function CourseForm({ initial }: { initial?: CourseValues }) {
             aria-describedby={errors.title ? "c-title-err" : undefined}
           />
           <FieldError id="c-title-err" message={errors.title} />
-        </div>
-
-        <div>
-          <span className="label">Course URL</span>
-          {editingSlug ? (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex flex-1 items-center rounded-lg border border-line bg-canvas focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100">
-                <span className="pl-3 text-sm text-muted">/courses/</span>
-                <input
-                  id="c-slug"
-                  aria-label="URL slug"
-                  className="w-full bg-transparent px-1 py-2.5 text-sm text-ink focus:outline-none"
-                  value={values.slug}
-                  maxLength={160}
-                  onChange={(e) => {
-                    setSlugTouched(true);
-                    set("slug", e.target.value.toLowerCase().replace(/\s+/g, "-"));
-                  }}
-                  aria-invalid={errors.slug ? true : undefined}
-                  aria-describedby="c-slug-help"
-                />
-              </div>
-              <button
-                type="button"
-                className="btn-outline px-3 py-2"
-                onClick={() => {
-                  setSlugTouched(false);
-                  set("slug", slugify(values.title));
-                }}
-              >
-                Regenerate from title
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-line bg-canvas px-3 py-2.5 text-sm">
-              <span className="text-muted">/courses/</span>
-              <span className="font-mono text-brand-700">{slugPreview}</span>
-              <button type="button" className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline" onClick={() => setEditingSlug(true)}>
-                <Icon name="pencil" className="size-3.5" /> Edit
-              </button>
-            </div>
-          )}
-          {errors.slug ? (
-            <FieldError id="c-slug-help" message={errors.slug} />
-          ) : (
-            <p id="c-slug-help" className="mt-1 text-xs text-muted">
-              {isNew ? "Generated from the title. Edit it if you want a shorter link." : "Changing the URL of a published course breaks links you've already shared."}
-            </p>
-          )}
         </div>
 
         <div className="grid gap-5 sm:grid-cols-[200px_1fr]">
@@ -259,13 +191,19 @@ export function CourseForm({ initial }: { initial?: CourseValues }) {
           </label>
           <select id="c-category" className="input" value={values.category} onChange={(e) => set("category", e.target.value)}>
             <option value="">No category</option>
-            {COURSE_CATEGORIES.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
+            {categories.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.name}
+                {c.published ? "" : " (hidden)"}
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-muted">Used for the category filters in the course catalogue.</p>
+          <p className="mt-1 text-xs text-muted">
+            Used for the homepage learning paths and the catalogue filters.{" "}
+            <Link href="/admin/categories" className="font-semibold text-brand-600 hover:underline">
+              Manage categories
+            </Link>
+          </p>
         </div>
 
         <div>

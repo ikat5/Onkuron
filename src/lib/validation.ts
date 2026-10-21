@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { parseYouTubeUrl } from "@/lib/youtube";
-import { CATEGORY_IDS } from "@/lib/categories";
+import { CATEGORY_ICONS } from "@/lib/categories";
+import { INTERACTIVE_MODULES } from "@/lib/interactive";
 import { TEAM_IDS } from "@/lib/team";
 
 /**
@@ -96,12 +97,11 @@ const slugSchema = z
 
 const courseFields = z.object({
   title: z.string().trim().min(3).max(150),
-  slug: slugSchema.optional(),
   summary: z.string().trim().max(300),
   description: z.string().trim().max(10000),
   price: z.coerce.number().int("Use whole taka").min(1, "Price must be at least ৳1").max(1_000_000),
-  /** "" clears the category. */
-  category: z.union([z.enum(CATEGORY_IDS), z.literal("")]).optional(),
+  /** Slug of an existing category (checked by the service); "" clears it. */
+  category: z.union([slugSchema.max(60), z.literal("")]).optional(),
   published: z.boolean(),
 });
 
@@ -188,13 +188,15 @@ export const progressSchema = z.object({
   completed: z.boolean().optional(),
 });
 
-export const UPLOAD_KINDS = ["thumbnail", "teacher_photo", "team_photo", "video", "pdf", "slides", "document"] as const;
+export const UPLOAD_KINDS = ["thumbnail", "teacher_photo", "team_photo", "promo_thumbnail", "promo_video", "category_image", "video", "pdf", "slides", "document"] as const;
 
 export const signUploadSchema = z.object({
   kind: z.enum(UPLOAD_KINDS),
   courseId: objectIdSchema.optional(),
   /** Teacher profile receiving a "teacher_photo" upload. */
   profileId: objectIdSchema.optional(),
+  /** Category receiving a "category_image" upload. */
+  targetId: objectIdSchema.optional(),
   lessonId: objectIdSchema.optional(),
   resourceId: objectIdSchema.optional(),
   title: z.string().trim().min(1).max(150).optional(),
@@ -232,16 +234,50 @@ export const settingsSchema = z.object({
   supportPhone: z.union([bdPhoneSchema, z.literal("")]).optional(),
 });
 
-/** Platform introduction (homepage + dashboards). */
+/** Platform promotional video (homepage hero + admin overview). */
 export const introSchema = z
   .object({
     youtubeUrl: youtubeUrlSchema,
     title: z.string().trim().max(120).default(""),
     text: z.string().trim().max(1500).default(""),
+    /** Show the promotional video section on the homepage. */
+    enabled: z.boolean().default(true),
   })
   .transform(({ youtubeUrl, ...rest }) => ({ ...rest, youtubeVideoId: youtubeUrl }));
 
 const shortText = (max: number) => z.string().trim().max(max);
+
+
+export const categorySchema = z.object({
+  name: z.string().trim().min(2, "Enter a category name").max(60),
+  description: shortText(300).default(""),
+  label: shortText(30).default(""),
+  icon: z.enum(CATEGORY_ICONS).default("book"),
+  published: z.boolean().default(false),
+  /** Courses filed under this category; courses left out are uncategorised. Omit to leave courses unchanged. */
+  courseIds: z
+    .array(objectIdSchema)
+    .max(500)
+    .transform((ids) => [...new Set(ids.map((id) => id.toLowerCase()))])
+    .optional(),
+});
+
+export const topicSchema = z.object({
+  title: z.string().trim().min(3, "Use at least 3 characters").max(100),
+  chapter: shortText(40).default(""),
+  chapterBn: shortText(80).default(""),
+  glyph: shortText(6).default(""),
+  learn: z
+    .array(z.string().trim().min(1).max(120))
+    .max(8, "Use at most 8 points")
+    .default([]),
+  /** "" = no simulation yet (the lab shows a "being prepared" state). */
+  module: z.union([z.enum(INTERACTIVE_MODULES), z.literal("")]).default(""),
+  courseId: z.union([objectIdSchema, z.literal("")]).default(""),
+  published: z.boolean().default(false),
+});
+
+export const idOrderSchema = z.object({ ids: z.array(objectIdSchema).min(1).max(500) });
 
 /** An optional https link that must point at one of `hosts` (or a subdomain). Empty string = no link. */
 const profileLink = (hosts: string[], message: string) =>
@@ -271,7 +307,6 @@ export const teacherProfileSchema = z
     team: z.enum(TEAM_IDS).default("teacher"),
     published: z.boolean().default(false),
     displayName: z.string().trim().min(2, "Enter the public display name").max(80),
-    slug: slugSchema.max(80).optional().or(z.literal("")),
     headline: shortText(120).default(""),
     qualification: shortText(160).default(""),
     facebookUrl: profileLink(["facebook.com", "fb.com"], "Enter an https://facebook.com/… link"),
@@ -325,5 +360,7 @@ export type LessonInput = z.infer<typeof lessonSchema>;
 export type LessonUpdateInput = z.infer<typeof lessonUpdateSchema>;
 export type ProgressInput = z.infer<typeof progressSchema>;
 export type IntroInput = z.infer<typeof introSchema>;
+export type CategoryInput = z.infer<typeof categorySchema>;
+export type TopicInput = z.infer<typeof topicSchema>;
 export type TeacherProfileInput = z.infer<typeof teacherProfileSchema>;
 export type ContactInput = z.infer<typeof contactSchema>;

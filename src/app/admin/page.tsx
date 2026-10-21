@@ -54,12 +54,12 @@ export default async function TeacherHome() {
             compact
             eyebrow="Platform introduction"
             cta={
-              <Link href="/admin/settings#intro" className="btn-ghost-dark px-4 py-2">
-                <Icon name="pencil" /> {intro.youtubeVideoId ? "Change intro video" : "Add intro video"}
+              <Link href="/admin/promo-video" className="btn-ghost-dark px-4 py-2">
+                <Icon name="pencil" /> {intro.youtubeVideoId || intro.videoUrl ? "Change promotional video" : "Add promotional video"}
               </Link>
             }
           >
-            <p className="mt-3 text-xs text-brand-100/60">Shown on the homepage “Discover Onkur” section.</p>
+            <p className="mt-3 text-xs text-brand-100/60">{intro.enabled ? "Shown as the homepage hero, right below the header." : "The homepage video section is switched off."}</p>
           </IntroVideo>
         </div>
       </section>

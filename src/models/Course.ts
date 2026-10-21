@@ -1,5 +1,5 @@
 import { Schema, type Types } from "mongoose";
-import { CATEGORY_IDS } from "@/lib/categories";
+import { CATEGORY_SLUG_RE } from "@/lib/categories";
 import { model } from "./util";
 
 /** Trusted metadata of a Cloudinary asset, verified server-side via the Admin API. */
@@ -41,7 +41,7 @@ export interface ICourse {
   description: string;
   /** Price in BDT (whole taka). Always read from the database, never from the client. */
   price: number;
-  /** One of COURSE_CATEGORIES (src/lib/categories.ts); optional for courses created before categories existed. */
+  /** Slug of a Category document (checked by the course service); optional for uncategorised courses. */
   category?: string;
   thumbnail?: IAsset;
   published: boolean;
@@ -57,7 +57,7 @@ const CourseSchema = new Schema<ICourse>(
     summary: { type: String, default: "", maxlength: 300 },
     description: { type: String, default: "", maxlength: 10000 },
     price: { type: Number, required: true, min: 0, max: 1_000_000 },
-    category: { type: String, enum: CATEGORY_IDS },
+    category: { type: String, maxlength: 60, match: CATEGORY_SLUG_RE },
     thumbnail: AssetSchema,
     published: { type: Boolean, default: false },
     isDemo: { type: Boolean, default: false },

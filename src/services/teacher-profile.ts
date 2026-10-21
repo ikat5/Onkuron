@@ -135,9 +135,9 @@ function fieldsFrom(input: TeacherProfileInput) {
   };
 }
 
-async function uniqueSlug(base: string, excludeId?: Types.ObjectId) {
-  let slug = base || `teacher-${randomBytes(2).toString("hex")}`;
-  for (let i = 0; i < 5 && (await TeacherProfile.exists({ slug, ...(excludeId ? { _id: { $ne: excludeId } } : {}) })); i++) {
+async function uniqueSlug(base: string) {
+  let slug = base;
+  for (let i = 0; i < 5 && (await TeacherProfile.exists({ slug })); i++) {
     slug = `${base}-${randomBytes(2).toString("hex")}`;
   }
   return slug;
@@ -145,9 +145,8 @@ async function uniqueSlug(base: string, excludeId?: Types.ObjectId) {
 
 export async function createTeacherProfile(admin: SessionUser, input: TeacherProfileInput, ip: string) {
   await dropLegacyIndex();
-  // An explicitly chosen URL must be free; a generated one is made unique.
-  if (input.slug && (await TeacherProfile.exists({ slug: input.slug }))) throw conflict("That profile URL is already used by another profile");
-  const slug = input.slug || (await uniqueSlug(slugify(input.displayName)));
+  // The URL is generated from the name once (made unique) and never changes, so shared links keep working.
+  const slug = await uniqueSlug(slugify(input.displayName, "profile"));
   // Always append after the team's existing profiles (profiles from the single-profile version may lack `order`).
   const team = teamFilter(input.team);
   const [last, count] = await Promise.all([TeacherProfile.findOne({ ...team, order: { $exists: true } }).sort({ order: -1 }).select("order").lean(), TeacherProfile.countDocuments(team)]);
@@ -163,7 +162,7 @@ export async function createTeacherProfile(admin: SessionUser, input: TeacherPro
     await audit({ action: "teacher_profile.created", actor: admin, targetType: "teacher_profile", targetId: String(doc._id), ip, metadata: { team: input.team } });
     return toDTO(doc.toObject() as LeanProfile);
   } catch (err) {
-    if ((err as { code?: number }).code === 11000) throw conflict("That profile URL is already used by another profile");
+    if ((err as { code?: number }).code === 11000) throw conflict("A profile with a very similar name was created at the same moment. Please save again.");
     throw err;
   }
 }
@@ -171,19 +170,14 @@ export async function createTeacherProfile(admin: SessionUser, input: TeacherPro
 export async function updateTeacherProfile(admin: SessionUser, id: string, input: TeacherProfileInput, ip: string) {
   assertId(id);
   const _id = new Types.ObjectId(id);
-  const slug = input.slug || (await uniqueSlug(slugify(input.displayName), _id));
-  const update: Record<string, unknown> = { $set: { ...fieldsFrom(input), slug, courseIds: await existingCourseIds(input.courseIds) } };
+  // The profile URL (slug) is kept as it is: renaming the profile doesn't break shared links.
+  const update: Record<string, unknown> = { $set: { ...fieldsFrom(input), courseIds: await existingCourseIds(input.courseIds) } };
   if (input.youtubeVideoId) (update.$set as Record<string, unknown>).youtubeVideoId = input.youtubeVideoId;
   else update.$unset = { youtubeVideoId: 1 };
-  try {
-    const p = await TeacherProfile.findByIdAndUpdate(_id, update, { returnDocument: "after", runValidators: true }).lean();
-    if (!p) throw notFound("Profile not found");
-    await audit({ action: "teacher_profile.updated", actor: admin, targetType: "teacher_profile", targetId: id, ip, metadata: { published: input.published } });
-    return toDTO(p as LeanProfile);
-  } catch (err) {
-    if ((err as { code?: number }).code === 11000) throw conflict("That profile URL is already used by another profile");
-    throw err;
-  }
+  const p = await TeacherProfile.findByIdAndUpdate(_id, update, { returnDocument: "after", runValidators: true }).lean();
+  if (!p) throw notFound("Profile not found");
+  await audit({ action: "teacher_profile.updated", actor: admin, targetType: "teacher_profile", targetId: id, ip, metadata: { published: input.published } });
+  return toDTO(p as LeanProfile);
 }
 
 export async function deleteTeacherProfile(admin: SessionUser, id: string, ip: string) {

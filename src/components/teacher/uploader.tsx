@@ -3,8 +3,8 @@
 import { useRef, useState } from "react";
 import { api } from "@/lib/api-client";
 
-/** Lesson videos are YouTube links, so only images and documents are uploaded. */
-export type UploadKind = "thumbnail" | "teacher_photo" | "team_photo" | "pdf" | "slides" | "document";
+/** Lesson videos are YouTube links; the only video file uploaded is the homepage promo video. */
+export type UploadKind = "thumbnail" | "teacher_photo" | "team_photo" | "promo_thumbnail" | "promo_video" | "category_image" | "pdf" | "slides" | "document";
 
 interface SignResponse {
   intentId: string;
@@ -17,6 +17,9 @@ const ACCEPT: Record<UploadKind, string> = {
   thumbnail: "image/jpeg,image/png,image/webp",
   teacher_photo: "image/jpeg,image/png,image/webp",
   team_photo: "image/jpeg,image/png,image/webp",
+  promo_thumbnail: "image/jpeg,image/png,image/webp",
+  promo_video: "video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v",
+  category_image: "image/jpeg,image/png,image/webp",
   pdf: "application/pdf,.pdf",
   slides: ".ppt,.pptx,.odp,.key",
   document: ".doc,.docx,.odt,.rtf,.txt,.xls,.xlsx,.csv",
@@ -76,6 +79,7 @@ export function Uploader({
   kind,
   courseId,
   profileId,
+  targetId,
   lessonId,
   resourceId,
   label,
@@ -88,6 +92,8 @@ export function Uploader({
   courseId?: string;
   /** Teacher profile receiving a "teacher_photo" upload. */
   profileId?: string;
+  /** Category receiving a "category_image" upload. */
+  targetId?: string;
   lessonId?: string;
   resourceId?: string;
   label: string;
@@ -112,7 +118,7 @@ export function Uploader({
     setStage("Preparing…");
     setProgress(0);
     const signed = await api<SignResponse>("/api/teacher/uploads/sign", {
-      body: { kind, courseId, profileId, lessonId, resourceId, title: needsTitle || externalTitle !== undefined ? resourceTitle : undefined, fileName: file.name, fileSize: file.size, mimeType: file.type },
+      body: { kind, courseId, profileId, targetId, lessonId, resourceId, title: needsTitle || externalTitle !== undefined ? resourceTitle : undefined, fileName: file.name, fileSize: file.size, mimeType: file.type },
     });
     if (!signed.ok) {
       setProgress(null);

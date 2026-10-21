@@ -14,6 +14,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { featureStatus } from "@/lib/env";
 import { Course } from "@/models/Course";
 import { Enrollment } from "@/models/Enrollment";
+import { listCategories } from "@/services/categories";
 import { listLessonsForTeacher } from "@/services/lessons";
 
 export const metadata: Metadata = { title: "Edit course" };
@@ -25,7 +26,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ cou
   await connectDB();
   const course = await Course.findById(courseId).lean();
   if (!course) notFound();
-  const [lessons, students] = await Promise.all([listLessonsForTeacher(courseId), Enrollment.countDocuments({ courseId, status: "approved" })]);
+  const [lessons, students, categories] = await Promise.all([listLessonsForTeacher(courseId), Enrollment.countDocuments({ courseId, status: "approved" }), listCategories()]);
   const canUpload = featureStatus().cloudinary.ok;
 
   return (
@@ -81,10 +82,10 @@ export default async function EditCoursePage({ params }: { params: Promise<{ cou
 
       <div id="details" className="grid scroll-mt-6 gap-6 xl:grid-cols-[1fr_320px]">
         <CourseForm
+          categories={categories}
           initial={{
             id: courseId,
             title: course.title,
-            slug: course.slug,
             summary: course.summary,
             description: course.description,
             price: course.price,

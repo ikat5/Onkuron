@@ -14,10 +14,13 @@ export interface ISetting {
   supportEmail?: string;
   supportPhone?: string;
   /**
-   * Platform introduction shown on the homepage and the admin overview (single source of truth).
-   * Only a server-validated YouTube video ID is stored.
+   * Platform promotional video: the homepage hero right under the header and the admin overview
+   * (single source of truth). Either a server-validated YouTube video ID or an uploaded `video`
+   * file (one at a time); `thumbnail` is an optional poster image shown before the visitor presses play.
    */
-  intro?: { youtubeVideoId?: string; title?: string; text?: string };
+  intro?: { youtubeVideoId?: string; video?: IAsset; title?: string; text?: string; enabled?: boolean; thumbnail?: IAsset };
+  /** Starter content is inserted once; afterwards the admin owns it (deleting everything stays deleted). */
+  seeded?: { categories?: boolean; topics?: boolean };
   /** Group photo of the teacher panel, shown at the top of Meet Our Teachers. */
   teamPhoto?: IAsset;
   updatedAt: Date;
@@ -36,9 +39,14 @@ const SettingSchema = new Schema<ISetting>(
     supportPhone: { type: String, maxlength: 20 },
     intro: {
       youtubeVideoId: { type: String, match: /^[A-Za-z0-9_-]{11}$/ },
+      video: AssetSchema,
       title: { type: String, maxlength: 120 },
       text: { type: String, maxlength: 1500 },
+      /** Homepage promotional video section on/off (missing = on). */
+      enabled: Boolean,
+      thumbnail: AssetSchema,
     },
+    seeded: { categories: Boolean, topics: Boolean },
     teamPhoto: AssetSchema,
   },
   { timestamps: { createdAt: false, updatedAt: true } },

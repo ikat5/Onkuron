@@ -24,7 +24,6 @@ interface Achievement {
 interface Draft {
   published: boolean;
   displayName: string;
-  slug: string;
   headline: string;
   qualification: string;
   facebookUrl: string;
@@ -55,7 +54,6 @@ function draftOf(p: TeacherProfileDTO | null): Draft {
   return {
     published: p?.published ?? false,
     displayName: p?.displayName ?? "",
-    slug: p?.slug ?? "",
     headline: p?.headline ?? "",
     qualification: p?.qualification ?? "",
     facebookUrl: p?.facebookUrl ?? "",
@@ -70,14 +68,6 @@ function draftOf(p: TeacherProfileDTO | null): Draft {
     youtubeUrl: p?.youtubeVideoId ? youtubeWatchUrl(p.youtubeVideoId) : "",
   };
 }
-
-const slugify = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -140,7 +130,6 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
   const isNew = !initial;
   const [saved, setSaved] = useState(() => draftOf(initial));
   const [d, setD] = useState(() => draftOf(initial));
-  const [slugTouched, setSlugTouched] = useState(!isNew);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<"photo" | "teacher" | null>(null);
@@ -161,11 +150,7 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
   }, [dirty]);
 
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
-    setD((x) => {
-      const next = { ...x, [key]: value };
-      if (key === "displayName" && !slugTouched) next.slug = slugify(String(value));
-      return next;
-    });
+    setD((x) => ({ ...x, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
   }
   function setAch(i: number, patch: Partial<Achievement>) {
@@ -185,7 +170,6 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
   async function save() {
     const found: Record<string, string> = {};
     if (d.displayName.trim().length < 2) found.displayName = `Enter the ${who}'s public name`;
-    if (d.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(d.slug)) found.slug = "Use lowercase letters, numbers and hyphens";
     if (videoInvalid) found.youtubeUrl = "Not a valid YouTube video link";
     d.achievements.forEach((a, i) => {
       if (a.title.trim().length < 2) found[`achievements.${i}`] = "Give this achievement a title";
@@ -198,7 +182,6 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
     const body = {
       ...d,
       team,
-      slug: d.slug || undefined,
       achievements: d.achievements.map((a) => ({ title: a.title, description: a.description, year: a.year ? Number(a.year) : null })),
       youtubeUrl: d.youtubeUrl.trim(),
       facebookUrl: d.facebookUrl.trim(),
@@ -210,13 +193,11 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
     setBusy(false);
     if (!res.ok) {
       if (res.error.fields) setErrors(Object.fromEntries(Object.entries(res.error.fields).map(([k, v]) => [k, v?.[0]])));
-      if (res.error.code === "conflict") setErrors((e) => ({ ...e, slug: res.error.message }));
       return toast(res.error.message, "error");
     }
     const next = draftOf(res.data.teacher);
     setSaved(next);
     setD(next);
-    setSlugTouched(true);
     if (isNew) {
       toast(`${res.data.teacher.displayName} added. You can now upload a photo.`);
       router.replace(`${cfg.adminPath}/${res.data.teacher.id}`);
@@ -259,34 +240,12 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
       <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
         <div className="space-y-6">
           <Section title="Basics" hint={`Only what you enter here is shown publicly. Don't add qualifications the ${who} can't support.`}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="p-name" className="label">
-                  Name <span className="text-red-600">*</span>
-                </label>
-                <input id="p-name" className="input" value={d.displayName} maxLength={80} onChange={(e) => set("displayName", e.target.value)} aria-invalid={errors.displayName ? true : undefined} autoFocus={isNew} />
-                {err("displayName")}
-              </div>
-              <div>
-                <label htmlFor="p-slug" className="label">
-                  Profile URL
-                </label>
-                <div className="flex items-center rounded-lg border border-line bg-canvas focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100">
-                  <span className="pl-3 text-sm text-muted">{cfg.publicPath}/</span>
-                  <input
-                    id="p-slug"
-                    className="w-full bg-transparent px-1 py-2.5 text-sm focus:outline-none"
-                    value={d.slug}
-                    maxLength={80}
-                    onChange={(e) => {
-                      setSlugTouched(true);
-                      set("slug", e.target.value.toLowerCase().replace(/\s+/g, "-"));
-                    }}
-                    aria-invalid={errors.slug ? true : undefined}
-                  />
-                </div>
-                {err("slug")}
-              </div>
+            <div>
+              <label htmlFor="p-name" className="label">
+                Name <span className="text-red-600">*</span>
+              </label>
+              <input id="p-name" className="input" value={d.displayName} maxLength={80} onChange={(e) => set("displayName", e.target.value)} aria-invalid={errors.displayName ? true : undefined} autoFocus={isNew} />
+              {err("displayName")}
             </div>
             <div>
               <label htmlFor="p-headline" className="label">

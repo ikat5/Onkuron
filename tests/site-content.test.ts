@@ -13,6 +13,7 @@ import * as complete from "@/app/api/teacher/uploads/complete/route";
 import { resetCloudinaryForTests } from "@/lib/cloudinary";
 import { renderEmail } from "@/lib/email/templates";
 import { AssetDeletion } from "@/models/AssetDeletion";
+import { Category } from "@/models/Category";
 import { Course } from "@/models/Course";
 import { EmailOutbox } from "@/models/EmailOutbox";
 import { TeacherProfile } from "@/models/TeacherProfile";
@@ -104,7 +105,9 @@ describe("teacher profiles (many, managed from the admin panel)", () => {
     // Same name twice gets a unique generated URL; an explicitly taken URL is refused.
     const c = await add(t.cookie, { ...base, published: true });
     expect(c.json.teacher.slug).toMatch(/^tanvir-ahmed-[a-f0-9]{4}$/);
-    expect((await add(t.cookie, { ...base, slug: "nusrat-jahan" })).status).toBe(409);
+    const bangla = await add(t.cookie, { ...base, displayName: "নুসরাত", slug: "nusrat-jahan" });
+    expect(bangla.json.teacher.slug).toMatch(/^profile-[a-f0-9]{6}$/); // a sent slug is ignored; non-Latin names still get a URL
+    await call(teacherOne.DELETE, { method: "DELETE", cookie: t.cookie, params: { profileId: bangla.json.teacher.id } });
 
     const list = await call(teachers.GET, { cookie: t.cookie });
     expect(list.json.teachers.map((x: { displayName: string; order: number }) => `${x.order}:${x.displayName}`)).toEqual(["0:Tanvir Ahmed", "1:Nusrat Jahan", "2:Tanvir Ahmed"]);
@@ -115,9 +118,10 @@ describe("teacher profiles (many, managed from the admin panel)", () => {
     expect(pub[0]).not.toHaveProperty("id");
     expect(await getPublicTeacherProfile("tanvir-ahmed")).toBeNull(); // the unpublished one
 
-    const edited = await call(teacherOne.PUT, { method: "PUT", cookie: t.cookie, params: { profileId: a.json.teacher.id }, body: { ...base, published: true, headline: "Senior ICT teacher", slug: "tanvir" } });
-    expect(edited.json.teacher).toMatchObject({ headline: "Senior ICT teacher", slug: "tanvir", published: true });
-    expect((await getPublicTeacherProfile("tanvir"))!.profile.headline).toBe("Senior ICT teacher");
+    // Renaming keeps the profile URL, so links already shared keep working; a sent slug is ignored.
+    const edited = await call(teacherOne.PUT, { method: "PUT", cookie: t.cookie, params: { profileId: a.json.teacher.id }, body: { ...base, displayName: "Tanvir Ahmed Khan", published: true, headline: "Senior ICT teacher", slug: "tanvir" } });
+    expect(edited.json.teacher).toMatchObject({ displayName: "Tanvir Ahmed Khan", headline: "Senior ICT teacher", slug: "tanvir-ahmed", published: true });
+    expect((await getPublicTeacherProfile("tanvir-ahmed"))!.profile.headline).toBe("Senior ICT teacher");
 
     const reordered = await call(teacherOrder.PUT, { method: "PUT", cookie: t.cookie, body: { profileIds: [c.json.teacher.id, a.json.teacher.id, b.json.teacher.id] } });
     expect(reordered.json.teachers.map((x: { id: string }) => x.id)).toEqual([c.json.teacher.id, a.json.teacher.id, b.json.teacher.id]);
@@ -154,7 +158,6 @@ describe("teacher profiles (many, managed from the admin panel)", () => {
     for (const body of [
       { ...base, displayName: "x" },
       { ...base, youtubeUrl: "https://evil.example/watch?v=" + ID },
-      { ...base, slug: "Bad Slug!" },
       { ...base, achievements: [{ title: "" }] },
       { ...base, subjects: Array.from({ length: 21 }, (_, i) => `s${i}`) },
       { ...base, courseIds: ["not-an-id"] },
@@ -230,16 +233,18 @@ describe("contact form", () => {
 });
 
 describe("course categories", () => {
-  it("stores a controlled category and filters the public catalogue by it", async () => {
+  it("stores an existing category and filters the public catalogue by it", async () => {
     const { t } = await people();
+    await Category.create({ slug: "programming", name: "Programming Fundamentals", published: true }); // added by the admin (only HSC ICT is seeded)
     const a = await call(courses.POST, { cookie: t.cookie, body: { title: "HSC ICT Complete", price: 1000, category: "hsc-ict", published: true } });
     expect(a.status).toBe(201);
-    await call(courses.POST, { cookie: t.cookie, body: { title: "React Basics", price: 1500, category: "frontend", published: true } });
+    expect((await call(courses.POST, { cookie: t.cookie, body: { title: "C Basics", price: 1500, category: "programming", published: true } })).status).toBe(201);
     await call(courses.POST, { cookie: t.cookie, body: { title: "Hidden draft", price: 900, category: "hsc-ict", published: false } });
     expect((await call(courses.POST, { cookie: t.cookie, body: { title: "Bad", price: 1, category: "astrology" } })).status).toBe(400);
 
     expect((await listPublishedCourses({ category: "hsc-ict" })).map((c) => c.title)).toEqual(["HSC ICT Complete"]);
-    expect(await listPublishedCourses({ category: "made-up" })).toHaveLength(2); // unknown filter = all
+    expect(await listPublishedCourses({ category: "made-up" })).toHaveLength(0); // the catalogue page ignores unknown categories instead
+    expect((await listPublishedCourses()).map((c) => c.categoryName).sort()).toEqual(["HSC ICT", "Programming Fundamentals"]);
     // Public listing never includes the full description.
     expect((await listPublishedCourses())[0]).not.toHaveProperty("description");
 

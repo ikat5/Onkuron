@@ -3,8 +3,8 @@ import Link from "next/link";
 import { CourseCard } from "@/components/course-card";
 import { Icon } from "@/components/icons";
 import { Container } from "@/components/ui";
-import { categoryLabel, COURSE_CATEGORIES, isCategory } from "@/lib/categories";
 import { connectDB } from "@/lib/db";
+import { getPublishedCategory, listPublicCategories } from "@/services/categories";
 import { listPublishedCourses } from "@/services/courses";
 import { getPublicTeacherProfile } from "@/services/teacher-profile";
 
@@ -27,7 +27,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       alternates: { canonical: `/teachers/${teacher.profile.slug}` },
     };
   }
-  const label = isCategory(category) ? categoryLabel(category) : undefined;
+  await connectDB();
+  const label = (await getPublishedCategory(category).catch(() => null))?.name;
   return {
     title: label ? `${label} courses` : "Courses — HSC ICT & Web Development",
     description: label
@@ -44,11 +45,12 @@ function queryString(params: Record<string, string | undefined>) {
 
 export default async function CoursesPage({ searchParams }: Props) {
   const { category: raw, teacher: teacherSlug } = await searchParams;
-  const category = isCategory(raw) ? raw : undefined;
   await connectDB();
-  const teacher = await teacherFilter(teacherSlug);
+  // Only published categories filter the catalogue; an unknown one shows everything.
+  const [current, categories, teacher] = await Promise.all([getPublishedCategory(raw), listPublicCategories(), teacherFilter(teacherSlug)]);
+  const category = current?.slug;
   const courses = teacher ? (teacher.courseIds.length ? await listPublishedCourses({ category, onlyIds: teacher.courseIds }) : []) : await listPublishedCourses({ category });
-  const label = categoryLabel(category);
+  const label = current?.name;
   const teacherName = teacher?.profile.displayName;
 
   return (
@@ -74,11 +76,11 @@ export default async function CoursesPage({ searchParams }: Props) {
           </p>
         )}
         <nav aria-label="Filter by category" className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-1">
-          {[{ id: undefined, label: "All" }, ...COURSE_CATEGORIES].map((c) => {
+          {[{ id: undefined, label: "All" }, ...categories.map((c) => ({ id: c.slug, label: c.name }))].map((c) => {
             const active = c.id === category;
             return (
               <Link
-                key={c.label}
+                key={c.id ?? "all"}
                 href={`/courses${queryString({ category: c.id, teacher: teacher?.profile.slug })}`}
                 aria-current={active ? "page" : undefined}
                 className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold whitespace-nowrap transition ${active ? "border-brand-600 bg-brand-600 text-white" : "border-line bg-white text-ink hover:border-brand-200 hover:text-brand-700"}`}
