@@ -17,6 +17,8 @@ const COLUMNS = [
     title: "Onkur",
     links: [
       { href: "/teachers", label: "Meet Our Teachers" },
+      { href: "/developers", label: "Meet Our Developer Team" },
+      { href: "/editors", label: "Meet Our Video Editor Team" },
       { href: "/about", label: "About" },
       { href: "/contact", label: "Contact Us" },
     ],

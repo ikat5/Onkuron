@@ -4,10 +4,12 @@ import { Icon } from "@/components/icons";
 import { TeacherAvatar } from "@/components/teacher-card";
 import { Container } from "@/components/ui";
 import { YouTubePreview } from "@/components/youtube-preview";
+import { TEAMS } from "@/lib/team";
 import type { PublicTeacherProfile } from "@/services/teacher-profile";
 
-/** Public profile layout, shared by /teachers/[slug] and the teacher's private preview. */
+/** Public profile layout (any team), shared by the public profile pages and the admin preview. */
 export function TeacherProfileView({ profile, courses }: { profile: PublicTeacherProfile; courses: Array<CourseCardData & { _id: unknown }> }) {
+  const cfg = TEAMS[profile.team];
   return (
     <>
       <section className="relative overflow-hidden bg-night-900 text-white">
@@ -17,14 +19,14 @@ export function TeacherProfileView({ profile, courses }: { profile: PublicTeache
             <TeacherAvatar profile={profile} />
           </div>
           <div>
-            <Link href="/teachers" className="inline-flex items-center gap-1 text-sm text-brand-200 hover:text-white">
-              <Icon name="left" /> All teachers
+            <Link href={cfg.publicPath} className="inline-flex items-center gap-1 text-sm text-brand-200 hover:text-white">
+              <Icon name="left" /> All {cfg.plural.toLowerCase()}
             </Link>
             <h1 className="mt-3 text-4xl leading-tight font-extrabold sm:text-5xl">{profile.displayName}</h1>
             {profile.headline && <p className="mt-2 text-lg font-semibold text-sun-400">{profile.headline}</p>}
             {profile.shortBio && <p className="mt-4 max-w-2xl text-lg leading-relaxed text-brand-100/85">{profile.shortBio}</p>}
             {profile.subjects.length > 0 && (
-              <ul className="mt-6 flex flex-wrap gap-2" aria-label="Subjects taught">
+              <ul className="mt-6 flex flex-wrap gap-2" aria-label={cfg.subjectsLabel}>
                 {profile.subjects.map((s) => (
                   <li key={s} className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm font-semibold">
                     {s}
@@ -61,7 +63,7 @@ export function TeacherProfileView({ profile, courses }: { profile: PublicTeache
               <section aria-labelledby="philosophy-title" className="relative overflow-hidden rounded-[var(--radius-card)] bg-gradient-to-br from-brand-700 to-night-900 p-8 text-white">
                 <Icon name="sparkle" className="absolute top-6 right-6 size-10 text-white/10" />
                 <h2 id="philosophy-title" className="eyebrow text-sun-400">
-                  Teaching philosophy
+                  {cfg.philosophyLabel}
                 </h2>
                 <p className="mt-4 font-display text-xl leading-relaxed font-semibold whitespace-pre-line">{profile.philosophy}</p>
               </section>

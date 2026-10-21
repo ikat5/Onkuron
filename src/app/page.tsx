@@ -63,7 +63,7 @@ async function loadHome() {
 }
 
 export default async function Home() {
-  const [{ courses, counts }, intro, teachers] = await Promise.all([loadHome(), getIntroSafe(), listPublicTeacherProfiles()]);
+  const [{ courses, counts }, intro, teachers, developers] = await Promise.all([loadHome(), getIntroSafe(), listPublicTeacherProfiles(), listPublicTeacherProfiles("developer")]);
 
   return (
     <>
@@ -308,6 +308,37 @@ export default async function Home() {
           </Container>
         </section>
       )}
+
+      {/* G2: developer team preview (published profiles only; video editors are only on /editors). Always shown. */}
+      <section aria-labelledby="developers-title" className="border-t border-line bg-white py-20">
+        <Container>
+          <SectionHeading
+            id="developers-title"
+            eyebrow="Meet our developers"
+            title="The team that builds Onkur"
+            action={
+              <Link href="/developers" className="btn-outline shrink-0">
+                Meet Our Developer Team <Icon name="right" />
+              </Link>
+            }
+          />
+          {developers.length > 0 ? (
+            <div className="grid gap-6 lg:grid-cols-2">
+              {developers.slice(0, 4).map((d) => (
+                <TeacherCard key={d.slug} profile={d} />
+              ))}
+            </div>
+          ) : (
+            <div className="card flex flex-col items-center px-6 py-12 text-center">
+              <span className="flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                <Icon name="code" className="size-7" />
+              </span>
+              <p className="mt-4 text-lg font-bold text-ink">Developer profiles are coming soon</p>
+              <p className="mt-1 max-w-md text-sm text-muted">The people who build and run Onkur will be introduced here shortly.</p>
+            </div>
+          )}
+        </Container>
+      </section>
 
       {/* H: why Onkur */}
       <section aria-labelledby="why-title" className="bg-canvas py-20">

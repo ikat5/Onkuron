@@ -11,6 +11,7 @@ import { Course } from "@/models/Course";
 import { EmailOutbox } from "@/models/EmailOutbox";
 import { Enrollment } from "@/models/Enrollment";
 import { TeacherProfile } from "@/models/TeacherProfile";
+import { teamFilter } from "@/lib/team";
 import { User } from "@/models/User";
 import { getIntro } from "@/services/settings";
 
@@ -28,7 +29,7 @@ export default async function TeacherHome() {
     Conversation.countDocuments({ unreadForTeacher: { $gt: 0 } }),
     EmailOutbox.countDocuments({ status: { $in: ["failed", "dead"] } }),
     getIntro(),
-    TeacherProfile.countDocuments(),
+    TeacherProfile.countDocuments(teamFilter("teacher")),
   ]);
   const features = featureStatus();
 

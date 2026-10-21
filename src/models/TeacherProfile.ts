@@ -1,4 +1,5 @@
 import { Schema, type Types } from "mongoose";
+import type { Team } from "@/lib/team";
 import { model } from "./util";
 import { AssetSchema, type IAsset } from "./Course";
 
@@ -11,12 +12,14 @@ export interface IAchievement {
 }
 
 /**
- * A public teacher profile shown on Meet Our Teachers. Profiles are content
+ * A public profile of a teacher, developer or video editor (see src/lib/team.ts). Profiles are content
  * managed from the (shared) teacher account — they are not login accounts.
  * Nothing here is public until `published` is true.
  */
 export interface ITeacherProfile {
   _id: Types.ObjectId;
+  /** Absent on profiles saved before teams existed (those are teachers). */
+  team?: Team;
   published: boolean;
   /** Position on the public Teachers page (ascending). */
   order: number;
@@ -47,6 +50,7 @@ const AchievementSchema = new Schema<IAchievement>({
 
 const TeacherProfileSchema = new Schema<ITeacherProfile>(
   {
+    team: { type: String, enum: ["teacher", "developer", "editor"], default: "teacher" },
     published: { type: Boolean, default: false },
     order: { type: Number, default: 0 },
     displayName: { type: String, required: true, trim: true, maxlength: 80 },
@@ -66,6 +70,6 @@ const TeacherProfileSchema = new Schema<ITeacherProfile>(
 );
 
 TeacherProfileSchema.index({ slug: 1 }, { unique: true });
-TeacherProfileSchema.index({ published: 1, order: 1 });
+TeacherProfileSchema.index({ team: 1, published: 1, order: 1 });
 
 export const TeacherProfile = model<ITeacherProfile>("TeacherProfile", TeacherProfileSchema);

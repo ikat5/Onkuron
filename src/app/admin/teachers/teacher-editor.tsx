@@ -10,6 +10,7 @@ import { Uploader } from "@/components/teacher/uploader";
 import { useToast } from "@/components/toast";
 import { YouTubePreview } from "@/components/youtube-preview";
 import { api } from "@/lib/api-client";
+import { TEAMS, type Team } from "@/lib/team";
 import { parseYouTubeUrl, youtubeWatchUrl } from "@/lib/youtube";
 import type { TeacherProfileDTO } from "@/services/teacher-profile";
 
@@ -124,8 +125,10 @@ function TagInput({ id, label, values, onChange, placeholder }: { id: string; la
   );
 }
 
-/** Creates (initial = null) or edits one teacher profile. */
-export function TeacherEditor({ initial, courses, canUpload }: { initial: TeacherProfileDTO | null; courses: CourseOption[]; canUpload: boolean }) {
+/** Creates (initial = null) or edits one teacher, developer or video editor profile. */
+export function TeacherEditor({ team, initial, courses, canUpload }: { team: Team; initial: TeacherProfileDTO | null; courses: CourseOption[]; canUpload: boolean }) {
+  const cfg = TEAMS[team];
+  const who = cfg.singular.toLowerCase();
   const router = useRouter();
   const toast = useToast();
   const isNew = !initial;
@@ -175,7 +178,7 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
 
   async function save() {
     const found: Record<string, string> = {};
-    if (d.displayName.trim().length < 2) found.displayName = "Enter the teacher's public name";
+    if (d.displayName.trim().length < 2) found.displayName = `Enter the ${who}'s public name`;
     if (d.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(d.slug)) found.slug = "Use lowercase letters, numbers and hyphens";
     if (videoInvalid) found.youtubeUrl = "Not a valid YouTube video link";
     d.achievements.forEach((a, i) => {
@@ -188,6 +191,7 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
     setBusy(true);
     const body = {
       ...d,
+      team,
       slug: d.slug || undefined,
       achievements: d.achievements.map((a) => ({ title: a.title, description: a.description, year: a.year ? Number(a.year) : null })),
       youtubeUrl: d.youtubeUrl.trim(),
@@ -207,9 +211,9 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
     setSlugTouched(true);
     if (isNew) {
       toast(`${res.data.teacher.displayName} added. You can now upload a photo.`);
-      router.replace(`/admin/teachers/${res.data.teacher.id}`);
+      router.replace(`${cfg.adminPath}/${res.data.teacher.id}`);
     } else {
-      toast(res.data.teacher.published ? "Teacher saved and published." : "Teacher saved (not public yet).");
+      toast(res.data.teacher.published ? `${cfg.singular} saved and published.` : `${cfg.singular} saved (not public yet).`);
       router.refresh();
     }
   }
@@ -227,7 +231,7 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
       router.refresh();
     } else {
       toast(`${initial.displayName} deleted.`);
-      router.push("/admin/teachers");
+      router.push(cfg.adminPath);
       router.refresh();
     }
   }
@@ -246,7 +250,7 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
     >
       <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
         <div className="space-y-6">
-          <Section title="Basics" hint="Only what you enter here is shown publicly. Don't add qualifications the teacher can't support.">
+          <Section title="Basics" hint={`Only what you enter here is shown publicly. Don't add qualifications the ${who} can't support.`}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="p-name" className="label">
@@ -260,7 +264,7 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
                   Profile URL
                 </label>
                 <div className="flex items-center rounded-lg border border-line bg-canvas focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100">
-                  <span className="pl-3 text-sm text-muted">/teachers/</span>
+                  <span className="pl-3 text-sm text-muted">{cfg.publicPath}/</span>
                   <input
                     id="p-slug"
                     className="w-full bg-transparent px-1 py-2.5 text-sm focus:outline-none"
@@ -280,7 +284,7 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
               <label htmlFor="p-headline" className="label">
                 Headline
               </label>
-              <input id="p-headline" className="input" value={d.headline} maxLength={120} onChange={(e) => set("headline", e.target.value)} placeholder="e.g. HSC ICT & web development teacher" />
+              <input id="p-headline" className="input" value={d.headline} maxLength={120} onChange={(e) => set("headline", e.target.value)} placeholder={cfg.headlinePlaceholder} />
             </div>
             <div>
               <div className="flex items-baseline justify-between">
@@ -302,17 +306,18 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
             </div>
             <div>
               <label htmlFor="p-phil" className="label">
-                Teaching philosophy
+                {cfg.philosophyLabel}
               </label>
               <textarea id="p-phil" rows={3} className="input leading-relaxed" value={d.philosophy} maxLength={1500} onChange={(e) => set("philosophy", e.target.value)} />
             </div>
           </Section>
 
-          <Section title="Subjects & expertise">
-            <TagInput id="p-subjects" label="Subjects taught" values={d.subjects} onChange={(v) => set("subjects", v)} placeholder="e.g. HSC ICT" />
+          <Section title={cfg.hasCourses ? "Subjects & expertise" : "Skills & expertise"}>
+            <TagInput id="p-subjects" label={cfg.subjectsLabel} values={d.subjects} onChange={(v) => set("subjects", v)} placeholder={cfg.subjectsPlaceholder} />
             <TagInput id="p-expertise" label="Expertise" values={d.expertise} onChange={(v) => set("expertise", v)} placeholder="e.g. React" />
           </Section>
 
+          {cfg.hasCourses && (
           <Section title="Courses taught" hint="Shown on this teacher's public profile and on each course page.">
             {courses.length === 0 ? (
               <p className="text-sm text-muted">No courses yet.</p>
@@ -330,6 +335,7 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
               </ul>
             )}
           </Section>
+          )}
 
           <Section title="Achievements" hint="Add, edit, reorder or remove. Shown in this order.">
             {d.achievements.length === 0 && <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">No achievements yet.</p>}
@@ -364,7 +370,7 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
             </button>
           </Section>
 
-          <Section title="Introduction video (optional)" hint="A YouTube link shown on the teacher's public profile.">
+          <Section title="Introduction video (optional)" hint={`A YouTube link shown on the ${who}'s public profile.`}>
             <div>
               <label htmlFor="p-video" className="label">
                 YouTube video URL
@@ -395,7 +401,7 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
             <div className="space-y-3 p-4">
               <p className="text-sm font-semibold text-ink">Profile photograph</p>
               {isNew ? (
-                <p className="text-xs text-muted">Save the teacher first, then upload a photo.</p>
+                <p className="text-xs text-muted">Save the {who} first, then upload a photo.</p>
               ) : !canUpload ? (
                 <p className="text-xs text-sun-700">Uploads are unavailable until Cloudinary is configured.</p>
               ) : (
@@ -417,27 +423,27 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
               <input type="checkbox" className="mt-1 size-4 accent-leaf-600" checked={d.published} onChange={(e) => set("published", e.target.checked)} />
               <span>
                 <span className="block text-sm font-semibold text-ink">Show on the website</span>
-                <span className="text-xs text-muted">Meet Our Teachers, the homepage and the student dashboard.</span>
+                <span className="text-xs text-muted">{team === "teacher" ? "Meet Our Teachers, the homepage and the student dashboard." : team === "developer" ? "Meet Our Developer Team and the homepage." : "Meet Our Video Editor Team."}</span>
               </span>
             </label>
             <button className="btn-primary w-full" disabled={busy || (!dirty && !isNew)}>
-              {busy ? "Saving…" : isNew ? "Add teacher" : "Save changes"}
+              {busy ? "Saving…" : isNew ? `Add ${who}` : "Save changes"}
             </button>
             <p className="text-center text-xs" aria-live="polite">
               {dirty ? <span className="font-semibold text-sun-700">● Unsaved changes</span> : <span className="text-muted">{isNew ? "Not saved yet" : "All changes saved"}</span>}
             </p>
             {!isNew && (
               <div className="flex flex-col gap-2 border-t border-line pt-3 text-sm">
-                <Link href={`/admin/teachers/${initial!.id}/preview`} className="btn-outline">
+                <Link href={`${cfg.adminPath}/${initial!.id}/preview`} className="btn-outline">
                   <Icon name="eye" /> Preview profile
                 </Link>
                 {initial!.published && (
-                  <Link href={`/teachers/${initial!.slug}`} className="text-center text-xs font-semibold text-brand-600 hover:underline">
+                  <Link href={`${cfg.publicPath}/${initial!.slug}`} className="text-center text-xs font-semibold text-brand-600 hover:underline">
                     Open public page
                   </Link>
                 )}
                 <button type="button" className="mt-1 text-xs font-semibold text-red-700 hover:underline" onClick={() => setConfirm("teacher")}>
-                  Delete this teacher
+                  Delete this {who}
                 </button>
               </div>
             )}
@@ -447,13 +453,13 @@ export function TeacherEditor({ initial, courses, canUpload }: { initial: Teache
 
       <ConfirmDialog
         open={confirm !== null}
-        title={confirm === "photo" ? "Remove profile photo?" : "Delete this teacher?"}
-        confirmLabel={confirm === "photo" ? "Remove photo" : "Delete teacher"}
+        title={confirm === "photo" ? "Remove profile photo?" : `Delete this ${who}?`}
+        confirmLabel={confirm === "photo" ? "Remove photo" : `Delete ${who}`}
         busy={confirmBusy}
         onConfirm={runConfirm}
         onCancel={() => setConfirm(null)}
       >
-        <p>{confirm === "photo" ? "The photo will be deleted from storage." : `${initial?.displayName}'s profile and photo will be removed from the website. Courses and students are not affected.`}</p>
+        <p>{confirm === "photo" ? "The photo will be deleted from storage." : `${initial?.displayName}'s profile and photo will be removed from the website.${cfg.hasCourses ? " Courses and students are not affected." : ""}`}</p>
       </ConfirmDialog>
     </form>
   );

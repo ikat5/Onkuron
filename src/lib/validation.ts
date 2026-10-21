@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { parseYouTubeUrl } from "@/lib/youtube";
 import { CATEGORY_IDS } from "@/lib/categories";
+import { TEAM_IDS } from "@/lib/team";
 
 /**
  * Request schemas shared by API routes and client forms. Objects are strict
@@ -248,6 +249,8 @@ const tagList = z
 
 export const teacherProfileSchema = z
   .object({
+    /** Only used when creating; a profile never moves to another team. */
+    team: z.enum(TEAM_IDS).default("teacher"),
     published: z.boolean().default(false),
     displayName: z.string().trim().min(2, "Enter the public display name").max(80),
     slug: slugSchema.max(80).optional().or(z.literal("")),
@@ -276,7 +279,7 @@ export const teacherProfileSchema = z
   })
   .transform(({ youtubeUrl, ...rest }) => ({ ...rest, youtubeVideoId: youtubeUrl ?? null }));
 
-export const teacherOrderSchema = z.object({ profileIds: z.array(objectIdSchema).min(1).max(200) });
+export const teacherOrderSchema = z.object({ team: z.enum(TEAM_IDS).default("teacher"), profileIds: z.array(objectIdSchema).min(1).max(200) });
 
 export const contactSchema = z.object({
   name: z.string().trim().min(2, "Enter your name").max(100),

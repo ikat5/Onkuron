@@ -243,8 +243,8 @@ export async function signUpload(teacher: SessionUser, input: SignUploadInput) {
   if (rule.needsCourse) {
     if (!input.courseId || !(await Course.exists({ _id: input.courseId }))) throw notFound("Course not found");
   } else if (input.kind === "teacher_photo") {
-    if (!input.profileId) throw badRequest("Save the teacher once before uploading a photo.");
-    if (!(await TeacherProfile.exists({ _id: input.profileId }))) throw notFound("Teacher not found");
+    if (!input.profileId) throw badRequest("Save the profile once before uploading a photo.");
+    if (!(await TeacherProfile.exists({ _id: input.profileId }))) throw notFound("Profile not found");
   }
   if (rule.needsLesson) {
     if (!input.lessonId) throw badRequest("A lesson is required for this upload");
@@ -408,7 +408,7 @@ export async function completeUpload(teacher: SessionUser, intentId: string, ip:
   if (!attached) {
     // The course/lesson disappeared meanwhile: don't leave an orphaned file.
     await queueAssetDeletion(asset, "target_missing");
-    throw notFound(intent.kind === "teacher_photo" ? "The teacher profile no longer exists." : "The course or lesson no longer exists.");
+    throw notFound(intent.kind === "teacher_photo" ? "The profile no longer exists." : "The course or lesson no longer exists.");
   }
   if (previous && previous.publicId !== asset.publicId) await queueAssetDeletion(previous, `replaced_${intent.kind}`);
 
