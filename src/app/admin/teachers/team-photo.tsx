@@ -9,7 +9,7 @@ import { Uploader } from "@/components/teacher/uploader";
 import { useToast } from "@/components/toast";
 import { api } from "@/lib/api-client";
 
-/** Group photo of the whole teacher panel, shown at the top of Meet Our Teachers. */
+/** Group photo of the whole teacher panel. Stored only: Meet Our Teachers no longer shows it. */
 export function TeamPhoto({ url, canUpload }: { url?: string; canUpload: boolean }) {
   const router = useRouter();
   const toast = useToast();
@@ -43,7 +43,7 @@ export function TeamPhoto({ url, canUpload }: { url?: string; canUpload: boolean
       </div>
       <div className="space-y-3 p-5">
         <h2 className="font-bold text-ink">Teacher panel group photo</h2>
-        <p className="text-sm text-muted">Shown at the top of Meet Our Teachers, above the individual teachers.</p>
+        <p className="text-sm text-muted">Not shown on the public website at the moment. You can keep it here or remove it.</p>
         {!canUpload ? (
           <p className="text-xs text-sun-700">Uploads are unavailable until Cloudinary is configured.</p>
         ) : (

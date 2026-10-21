@@ -75,6 +75,23 @@ describe("teacher profiles (many, managed from the admin panel)", () => {
   };
   const add = (cookie: string, body: Record<string, unknown>) => call(teachers.POST, { cookie, body });
 
+  it("stores qualification and host-checked social links, and clears them", async () => {
+    const { t } = await people();
+    const social = { qualification: "B.Sc. in CSE, University of Dhaka", facebookUrl: "https://www.facebook.com/tanvir", youtubeChannelUrl: "https://youtube.com/@tanvir" };
+    const a = await add(t.cookie, { ...base, ...social, published: true });
+    expect(a.status).toBe(201);
+    expect(a.json.teacher).toMatchObject(social);
+    expect((await getPublicTeacherProfile("tanvir-ahmed"))!.profile).toMatchObject(social);
+
+    // Wrong host, plain http or a javascript: URL are refused.
+    for (const bad of [{ facebookUrl: "https://evil.example/facebook.com" }, { facebookUrl: "http://facebook.com/x" }, { youtubeChannelUrl: "javascript:alert(1)" }, { youtubeChannelUrl: "https://notyoutube.com/x" }]) {
+      expect((await add(t.cookie, { ...base, ...bad })).status).toBe(400);
+    }
+
+    const cleared = await call(teacherOne.PUT, { method: "PUT", cookie: t.cookie, params: { profileId: a.json.teacher.id }, body: { ...base, published: true, slug: "tanvir-ahmed" } });
+    expect(cleared.json.teacher).toMatchObject({ qualification: "", facebookUrl: "", youtubeChannelUrl: "" });
+  });
+
   it("adds, lists, edits and deletes several teachers; only published ones are public", async () => {
     const { t, s } = await people();
     expect((await add(s.cookie, base)).status).toBe(403);

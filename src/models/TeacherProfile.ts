@@ -26,6 +26,11 @@ export interface ITeacherProfile {
   displayName: string;
   slug: string;
   headline?: string;
+  /** Degree and institution, e.g. "B.Sc. in CSE, BUET". */
+  qualification?: string;
+  /** Public social profiles (https, host-checked on input). */
+  facebookUrl?: string;
+  youtubeChannelUrl?: string;
   shortBio: string;
   bio: string;
   philosophy?: string;
@@ -56,6 +61,9 @@ const TeacherProfileSchema = new Schema<ITeacherProfile>(
     displayName: { type: String, required: true, trim: true, maxlength: 80 },
     slug: { type: String, required: true, lowercase: true, trim: true, maxlength: 80 },
     headline: { type: String, trim: true, maxlength: 120 },
+    qualification: { type: String, trim: true, maxlength: 160 },
+    facebookUrl: { type: String, trim: true, maxlength: 300 },
+    youtubeChannelUrl: { type: String, trim: true, maxlength: 300 },
     shortBio: { type: String, default: "", maxlength: 300 },
     bio: { type: String, default: "", maxlength: 5000 },
     philosophy: { type: String, maxlength: 1500 },

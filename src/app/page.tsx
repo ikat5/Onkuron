@@ -4,11 +4,11 @@ import { CourseCard } from "@/components/course-card";
 import { HeroShowcase } from "@/components/home/hero-showcase";
 import { IctLab } from "@/components/home/ict-lab/ict-lab";
 import { Icon, type IconName } from "@/components/icons";
+import { InstructorCard } from "@/components/instructor-card";
 import { IntroVideo } from "@/components/intro-video";
 import { SectionHeading } from "@/components/section-heading";
-import { TeacherCard } from "@/components/teacher-card";
 import { Container } from "@/components/ui";
-import { COURSE_CATEGORIES } from "@/lib/categories";
+import { categoryIcon, COURSE_CATEGORIES } from "@/lib/categories";
 import { connectDB } from "@/lib/db";
 import { countPublishedByCategory, listPublishedCourses } from "@/services/courses";
 import { getIntroSafe } from "@/services/settings";
@@ -18,20 +18,6 @@ export const metadata: Metadata = {
   title: { absolute: "Onkur — Learn HSC ICT & Web Development Online | অঙ্কুরণ" },
   description: "Master HSC ICT and modern web development through structured video lessons, practical resources and guidance from dedicated teachers at Onkur (অঙ্কুরণ).",
   alternates: { canonical: "/" },
-};
-
-const CATEGORY_ICON: Record<string, IconName> = {
-  "hsc-ict": "chip",
-  "hsc-physics": "atom",
-  "hsc-chemistry": "flask",
-  "hsc-math": "sigma",
-  "hsc-biology": "leaf",
-  "ssc-ict": "chip",
-  "ssc-physics": "atom",
-  "ssc-math": "sigma",
-  "ssc-biology": "leaf",
-  programming: "code",
-  projects: "rocket",
 };
 
 const JOURNEY: Array<{ title: string; text: string; icon: IconName }> = [
@@ -63,7 +49,7 @@ async function loadHome() {
 }
 
 export default async function Home() {
-  const [{ courses, counts }, intro, teachers, developers] = await Promise.all([loadHome(), getIntroSafe(), listPublicTeacherProfiles(), listPublicTeacherProfiles("developer")]);
+  const [{ courses, counts }, intro, teachers] = await Promise.all([loadHome(), getIntroSafe(), listPublicTeacherProfiles()]);
 
   return (
     <>
@@ -153,7 +139,7 @@ export default async function Home() {
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {courses.map((c, i) => (
-                <CourseCard key={String(c._id)} course={c} priority={i < 3} />
+                <CourseCard key={String(c._id)} course={c} priority={i < 3} index={i} />
               ))}
             </div>
           )}
@@ -173,7 +159,7 @@ export default async function Home() {
                 <li key={c.id}>
                   <Link href={`/courses?category=${c.id}`} className="card lift group flex h-full items-start gap-4 p-5 hover:border-brand-200">
                     <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition duration-300 group-hover:-rotate-6 group-hover:bg-brand-600 group-hover:text-white">
-                      <Icon name={CATEGORY_ICON[c.id]} className="size-6" />
+                      <Icon name={categoryIcon(c.id)} className="size-6" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
@@ -286,59 +272,32 @@ export default async function Home() {
         </Container>
       </section>
 
-      {/* G: teachers preview (published profiles only) */}
+      {/* G: instructor showcase (published teacher profiles only) */}
       {teachers.length > 0 && (
-        <section aria-labelledby="teachers-title" className="bg-white py-20">
+        <section aria-labelledby="instructors-title" className="bg-white py-20">
           <Container>
             <SectionHeading
-              id="teachers-title"
-              eyebrow="Meet our teachers"
-              title="Learn from people who care how you learn"
+              id="instructors-title"
+              eyebrow="Our instructors"
+              title="Instructor Collaborations"
               action={
                 <Link href="/teachers" className="btn-outline shrink-0">
                   Meet Our Teachers <Icon name="right" />
                 </Link>
               }
-            />
-            <div className="grid gap-6 lg:grid-cols-2">
-              {teachers.slice(0, 4).map((t) => (
-                <TeacherCard key={t.slug} profile={t} />
+            >
+              The teachers behind every Onkur course. Explore their background, then browse the courses they teach.
+            </SectionHeading>
+            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-8">
+              {teachers.slice(0, 6).map((t) => (
+                <li key={t.slug} className="w-full max-w-sm sm:w-[calc(50%-0.75rem)] sm:max-w-none lg:w-[calc((100%-3rem)/3)]">
+                  <InstructorCard profile={t} />
+                </li>
               ))}
-            </div>
+            </ul>
           </Container>
         </section>
       )}
-
-      {/* G2: developer team preview (published profiles only; video editors are only on /editors). Always shown. */}
-      <section aria-labelledby="developers-title" className="border-t border-line bg-white py-20">
-        <Container>
-          <SectionHeading
-            id="developers-title"
-            eyebrow="Meet our developers"
-            title="The team that builds Onkur"
-            action={
-              <Link href="/developers" className="btn-outline shrink-0">
-                Meet Our Developer Team <Icon name="right" />
-              </Link>
-            }
-          />
-          {developers.length > 0 ? (
-            <div className="grid gap-6 lg:grid-cols-2">
-              {developers.slice(0, 4).map((d) => (
-                <TeacherCard key={d.slug} profile={d} />
-              ))}
-            </div>
-          ) : (
-            <div className="card flex flex-col items-center px-6 py-12 text-center">
-              <span className="flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-                <Icon name="code" className="size-7" />
-              </span>
-              <p className="mt-4 text-lg font-bold text-ink">Developer profiles are coming soon</p>
-              <p className="mt-1 max-w-md text-sm text-muted">The people who build and run Onkur will be introduced here shortly.</p>
-            </div>
-          )}
-        </Container>
-      </section>
 
       {/* H: why Onkur */}
       <section aria-labelledby="why-title" className="bg-canvas py-20">

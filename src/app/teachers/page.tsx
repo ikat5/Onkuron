@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { TeacherCard } from "@/components/teacher-card";
 import { Container } from "@/components/ui";
 import { connectDB } from "@/lib/db";
-import { getTeamPhotoUrl } from "@/services/settings";
 import { listPublicTeacherProfiles } from "@/services/teacher-profile";
 
 export const metadata: Metadata = {
@@ -22,13 +20,13 @@ const APPROACH = [
 
 export default async function TeachersPage() {
   await connectDB().catch(() => null);
-  const [profiles, teamPhotoUrl] = await Promise.all([listPublicTeacherProfiles(), getTeamPhotoUrl()]);
+  const profiles = await listPublicTeacherProfiles();
 
   return (
     <>
       <section className="relative overflow-hidden bg-night-900 text-white">
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(49,148,71,0.3),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(42,107,192,0.45),transparent_55%)]" />
-        <Container className="relative py-16 lg:py-20">
+        <Container className="relative pt-14 pb-24 lg:pt-20 lg:pb-28">
           <p className="eyebrow text-sun-400">Meet our teachers</p>
           <h1 className="mt-3 max-w-3xl text-4xl leading-tight font-extrabold sm:text-6xl">The people who will teach you</h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-brand-100/85">
@@ -37,13 +35,8 @@ export default async function TeachersPage() {
         </Container>
       </section>
 
-      <Container className="py-14">
-        {teamPhotoUrl && (
-          <figure className="card mb-12 overflow-hidden">
-            <Image src={teamPhotoUrl} alt="Onkur's teacher panel" width={1600} height={900} preload sizes="(min-width: 1280px) 1200px, 100vw" className="h-auto w-full" />
-            <figcaption className="px-5 py-3 text-center text-sm font-semibold text-muted">Our teacher panel</figcaption>
-          </figure>
-        )}
+      {/* Teacher cards rise into the header, so the page reads as one composition. */}
+      <Container className="relative -mt-14 pb-14 lg:-mt-16">
         {profiles.length === 0 ? (
           <div className="card flex flex-col items-center px-6 py-16 text-center">
             <span className="flex size-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">

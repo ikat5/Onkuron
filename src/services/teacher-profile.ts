@@ -21,6 +21,9 @@ export interface TeacherProfileDTO {
   displayName: string;
   slug: string;
   headline: string;
+  qualification: string;
+  facebookUrl: string;
+  youtubeChannelUrl: string;
   shortBio: string;
   bio: string;
   philosophy: string;
@@ -47,6 +50,9 @@ function toDTO(p: LeanProfile): TeacherProfileDTO {
     displayName: p.displayName,
     slug: p.slug,
     headline: p.headline ?? "",
+    qualification: p.qualification ?? "",
+    facebookUrl: p.facebookUrl ?? "",
+    youtubeChannelUrl: p.youtubeChannelUrl ?? "",
     shortBio: p.shortBio ?? "",
     bio: p.bio ?? "",
     philosophy: p.philosophy ?? "",
@@ -116,6 +122,9 @@ function fieldsFrom(input: TeacherProfileInput) {
     published: input.published,
     displayName: input.displayName,
     headline: input.headline,
+    qualification: input.qualification,
+    facebookUrl: input.facebookUrl,
+    youtubeChannelUrl: input.youtubeChannelUrl,
     shortBio: input.shortBio,
     bio: input.bio,
     philosophy: input.philosophy,

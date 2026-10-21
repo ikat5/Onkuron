@@ -52,6 +52,10 @@ const PATHS = {
   inbox: "M3 13h5l1 3h6l1-3h5M5 5h14l2 8v6H3v-6z",
   receipt: "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6",
   eye: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  cart: "M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h9.3a1 1 0 0 0 1-.8L20 8H6.2M9.5 20h.01M17 20h.01",
+  cap: "M2 9l10-5 10 5-10 5zM6 11v5c3 2.5 9 2.5 12 0v-5M22 9v6",
+  facebook: "M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8z",
+  youtube: "M2.5 7.5A3 3 0 0 1 5 5c3-.5 11-.5 14 0a3 3 0 0 1 2.5 2.5c.4 3 .4 6 0 9A3 3 0 0 1 19 19c-3 .5-11 .5-14 0a3 3 0 0 1-2.5-2.5c-.4-3-.4-6 0-9zM10 9l5 3-5 3z",
 } as const;
 
 export type IconName = keyof typeof PATHS;

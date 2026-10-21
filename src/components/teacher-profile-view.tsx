@@ -116,8 +116,8 @@ export function TeacherProfileView({ profile, courses }: { profile: PublicTeache
               </Link>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {courses.map((c) => (
-                <CourseCard key={String(c._id)} course={c} />
+              {courses.map((c, i) => (
+                <CourseCard key={String(c._id)} course={c} index={i} />
               ))}
             </div>
           </section>

@@ -163,3 +163,128 @@
     width: 0;
   }
 }
+
+/* ---------- 3D depth cards (TiltCard, src/components/tilt-card.tsx) ----------
+   The wrapper holds the perspective and the motion variables (--px/--py: pointer
+   position -1..1, --a: hover amount 0..1, eased in JS). Children opt into depth:
+   .tilt-body tilts, .tilt-stage keeps 3D for its floating layers, .tilt-art /
+   .tilt-float-* sit above the surface, .tilt-parallax drifts against the tilt.
+   Transforms and opacity only, so nothing here triggers layout. */
+@layer components {
+  .tilt {
+    --px: 0;
+    --py: 0;
+    --a: 0;
+    position: relative;
+    perspective: 1100px;
+  }
+  .tilt[data-active] {
+    z-index: 1;
+  }
+  .tilt-body {
+    position: relative;
+    transform-style: preserve-3d;
+    transform: translate3d(0, calc(var(--a) * -6px), 0) rotateX(calc(var(--py) * -5deg)) rotateY(calc(var(--px) * 6.5deg));
+    transition: border-color 300ms var(--ease-out-soft);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tilt[data-active] .tilt-body {
+    border-color: var(--color-brand-200);
+    will-change: transform;
+  }
+  /* Soft contact shadow under the card: grows with lift, slides against the tilt. */
+  .tilt-shadow {
+    position: absolute;
+    inset: 18% 7% 0;
+    border-radius: 1.5rem;
+    background: rgb(13 57 109 / 0.42);
+    filter: blur(24px);
+    opacity: calc(var(--a) * 0.85);
+    transform: translate3d(calc(var(--px) * -14px), calc(10px + var(--a) * 12px + var(--py) * -6px), 0) scale(calc(0.94 + var(--a) * 0.04));
+    pointer-events: none;
+  }
+  .tilt-stage {
+    position: relative;
+    transform-style: preserve-3d;
+  }
+  .tilt-art {
+    transform: translateZ(calc(var(--a) * 26px));
+    box-shadow: 0 calc(4px + var(--a) * 14px) calc(10px + var(--a) * 22px) -12px rgb(11 20 38 / calc(0.25 + var(--a) * 0.25));
+  }
+  .tilt-parallax {
+    transform: translate3d(calc(var(--px) * -10px), calc(var(--py) * -8px), 0) scale(calc(1 + var(--a) * 0.08));
+  }
+  .tilt-float-1 {
+    transform: translate3d(calc(var(--px) * 4px), calc(var(--py) * 3px), calc(var(--a) * 44px));
+  }
+  .tilt-float-2 {
+    transform: translate3d(calc(var(--px) * 7px), calc(var(--py) * 5px), calc(var(--a) * 60px)) rotate(calc(var(--a) * -8deg));
+  }
+  .tilt-text {
+    transform: translateZ(calc(var(--a) * 10px));
+  }
+  /* Light that follows the pointer across the artwork. */
+  .tilt-glare {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at calc(50% + var(--px) * 50%) calc(50% + var(--py) * 50%), rgb(255 255 255 / 0.38), transparent 55%);
+    opacity: calc(var(--a) * 0.9);
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+  }
+
+  /* Touch screens: no hover, so give a quick press response instead. */
+  @media (hover: none) {
+    .tilt-body {
+      transition: transform 180ms var(--ease-out-soft), box-shadow 180ms var(--ease-out-soft), border-color 300ms var(--ease-out-soft);
+    }
+    .tilt-body:active {
+      transform: scale(0.985);
+      box-shadow: 0 1px 2px rgb(23 32 51 / 0.06);
+    }
+  }
+
+  /* Entrance (set by TiltCard only for cards that start below the fold). */
+  .tilt[data-reveal="pending"] {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+  }
+  .tilt[data-reveal="shown"] {
+    animation: tilt-in 650ms var(--ease-out-soft) both;
+  }
+  @media (min-width: 640px) {
+    .tilt[data-reveal="shown"] {
+      animation-delay: calc(var(--i, 0) * 90ms);
+    }
+  }
+
+  @media print {
+    .tilt[data-reveal] {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tilt-body,
+    .tilt-art,
+    .tilt-parallax,
+    .tilt-float-1,
+    .tilt-float-2,
+    .tilt-text {
+      transform: none;
+    }
+  }
+}
+
+@keyframes tilt-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -26,6 +26,9 @@ interface Draft {
   displayName: string;
   slug: string;
   headline: string;
+  qualification: string;
+  facebookUrl: string;
+  youtubeChannelUrl: string;
   shortBio: string;
   bio: string;
   philosophy: string;
@@ -54,6 +57,9 @@ function draftOf(p: TeacherProfileDTO | null): Draft {
     displayName: p?.displayName ?? "",
     slug: p?.slug ?? "",
     headline: p?.headline ?? "",
+    qualification: p?.qualification ?? "",
+    facebookUrl: p?.facebookUrl ?? "",
+    youtubeChannelUrl: p?.youtubeChannelUrl ?? "",
     shortBio: p?.shortBio ?? "",
     bio: p?.bio ?? "",
     philosophy: p?.philosophy ?? "",
@@ -195,6 +201,8 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
       slug: d.slug || undefined,
       achievements: d.achievements.map((a) => ({ title: a.title, description: a.description, year: a.year ? Number(a.year) : null })),
       youtubeUrl: d.youtubeUrl.trim(),
+      facebookUrl: d.facebookUrl.trim(),
+      youtubeChannelUrl: d.youtubeChannelUrl.trim(),
     };
     const res = isNew
       ? await api<{ teacher: TeacherProfileDTO }>("/api/teacher/teachers", { body })
@@ -287,6 +295,13 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
               <input id="p-headline" className="input" value={d.headline} maxLength={120} onChange={(e) => set("headline", e.target.value)} placeholder={cfg.headlinePlaceholder} />
             </div>
             <div>
+              <label htmlFor="p-qual" className="label">
+                Qualification
+              </label>
+              <input id="p-qual" className="input" value={d.qualification} maxLength={160} onChange={(e) => set("qualification", e.target.value)} placeholder="e.g. B.Sc. in CSE, University of Dhaka" />
+              <p className="mt-1 text-xs text-muted">Degree and institution, shown on the homepage instructor cards.</p>
+            </div>
+            <div>
               <div className="flex items-baseline justify-between">
                 <label htmlFor="p-short" className="label">
                   Short biography
@@ -370,6 +385,25 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
             </button>
           </Section>
 
+          <Section title="Social links (optional)" hint="Icons appear on public cards only when a link is entered.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="p-fb" className="label">
+                  Facebook profile or page
+                </label>
+                <input id="p-fb" type="url" inputMode="url" className="input" value={d.facebookUrl} maxLength={300} onChange={(e) => set("facebookUrl", e.target.value)} placeholder="https://facebook.com/…" aria-invalid={errors.facebookUrl ? true : undefined} />
+                {err("facebookUrl")}
+              </div>
+              <div>
+                <label htmlFor="p-yt" className="label">
+                  YouTube channel
+                </label>
+                <input id="p-yt" type="url" inputMode="url" className="input" value={d.youtubeChannelUrl} maxLength={300} onChange={(e) => set("youtubeChannelUrl", e.target.value)} placeholder="https://youtube.com/@…" aria-invalid={errors.youtubeChannelUrl ? true : undefined} />
+                {err("youtubeChannelUrl")}
+              </div>
+            </div>
+          </Section>
+
           <Section title="Introduction video (optional)" hint={`A YouTube link shown on the ${who}'s public profile.`}>
             <div>
               <label htmlFor="p-video" className="label">
@@ -423,7 +457,7 @@ export function TeacherEditor({ team, initial, courses, canUpload }: { team: Tea
               <input type="checkbox" className="mt-1 size-4 accent-leaf-600" checked={d.published} onChange={(e) => set("published", e.target.checked)} />
               <span>
                 <span className="block text-sm font-semibold text-ink">Show on the website</span>
-                <span className="text-xs text-muted">{team === "teacher" ? "Meet Our Teachers, the homepage and the student dashboard." : team === "developer" ? "Meet Our Developer Team and the homepage." : "Meet Our Video Editor Team."}</span>
+                <span className="text-xs text-muted">{team === "teacher" ? "Meet Our Teachers, the homepage and the student dashboard." : team === "developer" ? "Meet Our Developer Team." : "Meet Our Video Editor Team."}</span>
               </span>
             </label>
             <button className="btn-primary w-full" disabled={busy || (!dirty && !isNew)}>

@@ -1,3 +1,5 @@
+import type { IconName } from "@/components/icons";
+
 /**
  * Controlled course categories. A small fixed list (not a database model):
  * the teacher picks one per course and the catalogue filters on it.
@@ -25,4 +27,23 @@ export function categoryLabel(id?: string | null) {
 
 export function isCategory(id: unknown): id is CourseCategory {
   return typeof id === "string" && COURSE_CATEGORIES.some((c) => c.id === id);
+}
+
+const CATEGORY_ICON: Record<CourseCategory, IconName> = {
+  "hsc-ict": "chip",
+  "hsc-physics": "atom",
+  "hsc-chemistry": "flask",
+  "hsc-math": "sigma",
+  "hsc-biology": "leaf",
+  "ssc-ict": "chip",
+  "ssc-physics": "atom",
+  "ssc-math": "sigma",
+  "ssc-biology": "leaf",
+  programming: "code",
+  projects: "rocket",
+};
+
+/** Subject icon for a category (a generic book for uncategorised courses). */
+export function categoryIcon(id?: string | null): IconName {
+  return isCategory(id) ? CATEGORY_ICON[id] : "book";
 }

@@ -242,6 +242,24 @@ export const introSchema = z
   .transform(({ youtubeUrl, ...rest }) => ({ ...rest, youtubeVideoId: youtubeUrl }));
 
 const shortText = (max: number) => z.string().trim().max(max);
+
+/** An optional https link that must point at one of `hosts` (or a subdomain). Empty string = no link. */
+const profileLink = (hosts: string[], message: string) =>
+  z
+    .string()
+    .trim()
+    .max(300)
+    .refine((v) => {
+      if (v === "") return true;
+      try {
+        const u = new URL(v);
+        const host = u.hostname.toLowerCase();
+        return u.protocol === "https:" && hosts.some((h) => host === h || host.endsWith(`.${h}`));
+      } catch {
+        return false;
+      }
+    }, message)
+    .default("");
 const tagList = z
   .array(z.string().trim().min(1).max(60))
   .max(20, "Use at most 20 items")
@@ -255,6 +273,9 @@ export const teacherProfileSchema = z
     displayName: z.string().trim().min(2, "Enter the public display name").max(80),
     slug: slugSchema.max(80).optional().or(z.literal("")),
     headline: shortText(120).default(""),
+    qualification: shortText(160).default(""),
+    facebookUrl: profileLink(["facebook.com", "fb.com"], "Enter an https://facebook.com/… link"),
+    youtubeChannelUrl: profileLink(["youtube.com"], "Enter an https://youtube.com/… channel link"),
     shortBio: shortText(300).default(""),
     bio: shortText(5000).default(""),
     philosophy: shortText(1500).default(""),
